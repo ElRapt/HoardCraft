@@ -1,8 +1,7 @@
 import discord
-from bot import MyClient
+from bot import MyBot
 from credentials import load_credentials
 
 credentials = load_credentials('credentials.json')
-intents = discord.Intents.default()
-client = MyClient(intents=intents)
-client.run(credentials['token'])
+bot = MyBot()
+bot.run(credentials['token'])
