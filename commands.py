@@ -1,4 +1,19 @@
 import discord
+from database import get_random_card
+
+
+rarity_colors = {
+    'legendary': discord.Colour.orange(),
+    'epic': discord.Colour.purple(),
+    'rare': discord.Colour.blue(),
+    'uncommon': discord.Colour.green(),
+    'common': discord.Colour.greyple(),  
+}
+
+collection_icons= {
+    'forsaken': "https://static.wikia.nocookie.net/wowpedia/images/7/72/Forsaken_Crest.png/revision/latest?cb=20151113054325",
+}
+
 
 def init_bot_commands(bot):
 
@@ -24,3 +39,25 @@ def init_bot_commands(bot):
 
         await ctx.respond(embed=embed) # Send the embed with some text
  
+
+    @bot.command(description="Get a random card")
+    async def random(ctx):
+        card = get_random_card()
+        
+        if card:
+            name, collection_name, title, quote, image_url, rarity = card
+            color = rarity_colors.get(rarity, discord.Colour.default())  
+            icon_url = collection_icons.get(collection_name.lower(), "")  
+
+            embed = discord.Embed(
+                title=name,
+                description=title,
+                color=color
+            )
+            embed.set_author(name=collection_name, icon_url=icon_url)
+            embed.set_image(url=image_url)
+            embed.set_footer(text=quote)
+
+            await ctx.respond(embed=embed)
+        else:
+            await ctx.respond("No cards available.")
