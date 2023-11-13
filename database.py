@@ -100,4 +100,74 @@ def get_random_card() -> Optional[Tuple[str, str, str, str, str, str]]:
     
     return card if card else None
 
+def claim_card(user_id: str, card_name: str, server_id: str) -> bool:
+    """
+    Claims a card for a user in a specific server. If the user does not exist, creates a new user.
+
+    Args:
+        user_id (str): The user's ID.
+        card_name (str): The card's name.
+        server_id (str): The server's ID where the card is being claimed.
+
+    Returns:
+        True if the card was successfully claimed.
+        False if the card is already claimed or does not exist.
+    """
+    conn = sqlite3.connect("database.sqlite")
+    cur = conn.cursor()
+
+    try:
+        # Check if user exists
+        cur.execute("SELECT id FROM User WHERE userID = ? AND serverId = ?", (user_id, server_id))
+        user_exists = cur.fetchone()
+
+        if user_exists is None:
+            # Create a new user if not exists
+            cur.execute("INSERT INTO User (userID, serverID) VALUES (?, ?)", (user_id, server_id))
+
+        # Now claim the card
+        cur.execute("""
+        UPDATE Card SET userID = (SELECT id FROM User WHERE userID = ? AND serverID = ?) WHERE name = ? AND userID IS NULL;
+        """, (user_id, server_id, card_name))
+        conn.commit()
+
+        return cur.rowcount > 0
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
+        return False
+    finally:
+        conn.close()
+
+
+def get_user_collection(user_id: str, server_id: str) -> Optional[list]:
+    """
+    Fetches the user's collection in a specific server.
+
+    Args:
+        user_id (str): The user's ID.
+        server_id (str): The server's ID where the collection is being fetched.
+
+    Returns:
+        A list of tuples containing the card's name, collection name, title, quote, imageURL, and rarity if found.
+        None if no card is available.
+    """
+    conn = sqlite3.connect("database.sqlite")
+    cur = conn.cursor()
+    
+    try:
+        # The SQL query now joins the Card and Collection tables to get the collection name along with the card details
+        cur.execute("""
+        SELECT c.name, co.name, c.title, c.quote, c.imageURL, c.rarity FROM Card c
+        JOIN Collection co ON c.collectionID = co.id
+        JOIN User u ON c.userID = u.id
+        WHERE u.userID = ? AND u.serverID = ?;
+        """, (user_id, server_id))
+        cards = cur.fetchall()
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
+        return None
+    finally:
+        conn.close()
+    
+    return cards if cards else None
 
