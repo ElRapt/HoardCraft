@@ -59,7 +59,8 @@ def init_bot_commands(bot):
                 description=title,
                 color=color
             )
-            embed.set_author(name=collection_name, icon_url=icon_url)
+            embed.set_thumbnail(url=icon_url)
+            embed.set_author(name=collection_name)
             embed.set_image(url=image_url)
             embed.set_footer(text=quote)
 
