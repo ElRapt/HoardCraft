@@ -29,20 +29,6 @@ def init_bot_commands(bot):
             # Add your logic for the claim action here
 
 
-    @bot.command(description="Create Sylvanas")
-    async def sylvanas(ctx):
-        embed = discord.Embed(
-            title="Sylvanas Windrunner",
-            description="The Banshee Queen",
-            color=discord.Colour.orange(), # Pycord provides a class with default colors you can choose from
-        )
-        embed.set_author(name="Forsaken", icon_url="https://static.wikia.nocookie.net/wowpedia/images/7/72/Forsaken_Crest.png/revision/latest?cb=20151113054325")
-        embed.set_image(url="https://static.wikia.nocookie.net/wow/images/e/e2/Sylvanas_JCC.jpg/revision/latest/scale-to-width-down/392?cb=20230811211943&path-prefix=fr")
-        embed.set_footer(text='"We are the Forsaken. We will slaughter anyone who stands in our way."')
-
-        await ctx.respond(embed=embed) # Send the embed with some text
- 
-
     @bot.command(description="Get a random card")
     async def random(ctx):
         card = get_random_card()
