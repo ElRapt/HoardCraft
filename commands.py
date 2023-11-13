@@ -22,14 +22,12 @@ collection_icons= {
 
 def init_bot_commands(bot):
 
-    class TestView(discord.ui.View): # Create a class called MyView that subclasses discord.ui.View
-        @discord.ui.button(label="Click me!", style=discord.ButtonStyle.success, emoji="😎") # Create a button with the label "😎 Click me!" with color Blurple
-        async def button_callback(self, button, interaction):
-            await interaction.response.send_message("You clicked the button!") # Send a message when the button is clicked
+    class ClaimView(discord.ui.View):  # Create a class that subclasses discord.ui.View
+        @discord.ui.button(label="Claim", style=discord.ButtonStyle.success, emoji="🏆")  # Create a "Claim" button
+        async def claim_callback(self, button, interaction):
+            await interaction.response.send_message("Claim successful!")  # Send a message when the button is clicked
+            # Add your logic for the claim action here
 
-    @bot.command(description="Test button") # Create a slash command
-    async def button(ctx):
-        await ctx.respond("This is a button!", view=TestView()) # Send a message with our View class that contains the button
 
     @bot.command(description="Create Sylvanas")
     async def sylvanas(ctx):
@@ -64,6 +62,6 @@ def init_bot_commands(bot):
             embed.set_image(url=image_url)
             embed.set_footer(text=quote)
 
-            await ctx.respond(embed=embed)
+            await ctx.respond(embed=embed, view=ClaimView())
         else:
             await ctx.respond("No cards available.")
