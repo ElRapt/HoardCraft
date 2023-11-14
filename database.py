@@ -185,3 +185,33 @@ def ensure_server_exists_in_db(server_id: str):
         print(f"An error occurred: {e}")
     finally:
         conn.close()
+
+def de_claim_card(user_id: str, card_name: str, server_id: str) -> bool:
+    """
+    De-claims a card for a user in a specific server.
+
+    Args:
+        user_id (str): The user's ID.
+        card_name (str): The card's name.
+        server_id (str): The server's ID.
+
+    Returns:
+        True if the card was successfully de-claimed.
+        False if an error occurs.
+    """
+    conn = sqlite3.connect("database.sqlite")
+    cur = conn.cursor()
+
+    try:
+        # Update the card's userID to NULL where the card's name matches and currently claimed by the user
+        cur.execute("""
+        UPDATE Card SET userID = NULL WHERE name = ? AND userID = (SELECT id FROM User WHERE userID = ? AND serverID = ?);
+        """, (card_name, user_id, server_id))
+        conn.commit()
+
+        return cur.rowcount > 0
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
+        return False
+    finally:
+        conn.close()

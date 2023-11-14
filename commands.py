@@ -1,5 +1,5 @@
 import discord
-from database import get_random_card, get_user_collection, claim_card
+from database import get_random_card, get_user_collection, claim_card, de_claim_card
 
 
 rarity_colors = {
@@ -35,6 +35,21 @@ def init_bot_commands(bot):
             else:
                 await interaction.response.send_message("Card not available.", ephemeral=True)
 
+    class ConfirmView(discord.ui.View):
+        def __init__(self):
+            super().__init__()
+            self.value = None
+
+        @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
+        async def confirm(self, button: discord.ui.Button, interaction: discord.Interaction):
+            self.value = True
+            self.stop()
+
+        @discord.ui.button(label="Cancel", style=discord.ButtonStyle.grey)
+        async def cancel(self, button: discord.ui.Button, interaction: discord.Interaction):
+            self.value = False
+            self.stop()
+
     class PaginatedView(discord.ui.View):
         def __init__(self, cards, initial_index=0):
             super().__init__()
@@ -52,6 +67,20 @@ def init_bot_commands(bot):
             if self.current_index < len(self.cards) - 1:
                 self.current_index += 1
                 await interaction.response.edit_message(embed=self.create_embed())
+
+        @discord.ui.button(label="Remove", style=discord.ButtonStyle.danger, custom_id="remove")
+        async def remove_card(self, button: discord.ui.Button, interaction: discord.Interaction):
+            # Ask for confirmation before removing
+            confirm_view = ConfirmView()
+            await interaction.response.send_message("Are you sure you want to remove this card?", view=confirm_view, ephemeral=True)
+            await confirm_view.wait()
+            if confirm_view.value:
+                # If confirmed, de-claim the card
+                card = self.cards[self.current_index]
+                if de_claim_card(interaction.user.id, card[0], interaction.guild.id):
+                    await interaction.followup.send("Card removed successfully.", ephemeral=True)
+                else:
+                    await interaction.followup.send("Failed to remove the card.", ephemeral=True)
 
         def create_embed(self):
             card = self.cards[self.current_index]
