@@ -56,46 +56,68 @@ def init_bot_commands(bot):
             self.stop()
 
     class PaginatedView(discord.ui.View):
-        def __init__(self, cards, user_name, initial_index=0):
+        def __init__(self, cards, user_name, user_id, initial_index=0):
             super().__init__()
             self.cards = cards
-            self.user_name = user_name  
+            self.user_name = user_name
+            self.user_id = user_id 
             self.current_index = initial_index
+            self.update_buttons()  # Update buttons based on the current index
 
-        @discord.ui.button(label="Previous", style=discord.ButtonStyle.grey)
-        async def show_previous(self, button: discord.ui.Button, interaction: discord.Interaction):
+        def update_buttons(self):
+            # Update the state of the Previous button
             if self.current_index > 0:
-                self.current_index -= 1
-                await interaction.response.edit_message(embed=self.create_embed())
+                self.children[0].disabled = False  # Enable Previous button
+            else:
+                self.children[0].disabled = True   # Disable Previous button
 
-        @discord.ui.button(label="Next", style=discord.ButtonStyle.grey)
-        async def show_next(self, button: discord.ui.Button, interaction: discord.Interaction):
+            # Update the state of the Next button
             if self.current_index < len(self.cards) - 1:
+                self.children[1].disabled = False  # Enable Next button
+            else:
+                self.children[1].disabled = True   # Disable Next button
+
+        async def show_previous(self, button: discord.ui.Button, interaction: discord.Interaction):
+            if interaction.user.id == self.user_id and self.current_index > 0:
+                self.current_index -= 1
+                self.update_buttons()
+                await interaction.response.edit_message(embed=self.create_embed(), view=self)
+            else:
+                await interaction.response.send_message("You do not have permission to do this.", ephemeral=True)
+
+        async def show_next(self, button: discord.ui.Button, interaction: discord.Interaction):
+            if interaction.user.id == self.user_id and self.current_index < len(self.cards) - 1:
                 self.current_index += 1
-                await interaction.response.edit_message(embed=self.create_embed())
+                self.update_buttons()
+                await interaction.response.edit_message(embed=self.create_embed(), view=self)
+            else:
+                await interaction.response.send_message("You do not have permission to do this.", ephemeral=True)
 
         @discord.ui.button(label="Remove", style=discord.ButtonStyle.danger, custom_id="remove")
         async def remove_card(self, button: discord.ui.Button, interaction: discord.Interaction):
-            card = self.cards[self.current_index]
-            card_name = card[0]  # Get the card's name
+            if interaction.user.id == self.user_id:
+                card = self.cards[self.current_index]
+                card_name = card[0]  # Get the card's name
 
-            # Ask for confirmation before removing
-            confirm_view = ConfirmView()
-            await interaction.response.send_message(f"Are you sure you want to un-claim {card_name}?", view=confirm_view, ephemeral=True)
-            await confirm_view.wait()
+                # Ask for confirmation before removing
+                confirm_view = ConfirmView()
+                await interaction.response.send_message(f"Are you sure you want to un-claim {card_name}?", view=confirm_view, ephemeral=True)
+                await confirm_view.wait()
 
-            if confirm_view.value:
-                # If confirmed, un-claim the card
-                if de_claim_card(interaction.user.id, card_name, interaction.guild.id):
-                    await interaction.followup.send(f"{card_name} has been un-claimed successfully.", ephemeral=True)
+                if confirm_view.value:
+                    # If confirmed, un-claim the card
+                    if de_claim_card(interaction.user.id, card_name, interaction.guild.id):
+                        await interaction.followup.send(f"{card_name} has been un-claimed successfully.", ephemeral=True)
+                    else:
+                        await interaction.followup.send(f"Failed to un-claim {card_name}.", ephemeral=True)
                 else:
-                    await interaction.followup.send(f"Failed to un-claim {card_name}.", ephemeral=True)
-            else:
-                # If cancelled, let the user know
-                await interaction.followup.send(f"un-claiming of {card_name} cancelled.", ephemeral=True)
+                    # If cancelled, let the user know
+                    await interaction.followup.send(f"un-claiming of {card_name} cancelled.", ephemeral=True)
 
-            # Update the original message to remove the buttons
-            await interaction.edit_original_response(view=None)
+                # Update the original message to remove the buttons
+                await interaction.edit_original_response(view=None)
+            else:
+                await interaction.response.send_message("You do not have permission to do this.", ephemeral=True)
 
 
         def create_embed(self):
@@ -159,7 +181,7 @@ def init_bot_commands(bot):
     async def mylist(ctx):
         cards = get_user_collection(ctx.author.id, ctx.guild.id)
         if cards:
-            view = PaginatedView(cards, ctx.author.name)
+            view = PaginatedView(cards, ctx.author.name, ctx.author.id)
             await ctx.send(embed=view.create_embed(), view=view)
         else:
             await ctx.send("No cards available.")
