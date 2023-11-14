@@ -1,6 +1,6 @@
 import discord
 import datetime
-from database import get_random_card, get_user_collection, claim_card, de_claim_card, check_user_cooldown
+from database import get_random_card, get_user_collection, claim_card, de_claim_card, check_user_cooldown, reset_cooldown
 
 
 rarity_colors = {
@@ -77,6 +77,7 @@ def init_bot_commands(bot):
             else:
                 self.children[1].disabled = True   # Disable Next button
 
+        @discord.ui.button(label="Previous", style=discord.ButtonStyle.grey)
         async def show_previous(self, button: discord.ui.Button, interaction: discord.Interaction):
             if interaction.user.id == self.user_id and self.current_index > 0:
                 self.current_index -= 1
@@ -85,6 +86,7 @@ def init_bot_commands(bot):
             else:
                 await interaction.response.send_message("You do not have permission to do this.", ephemeral=True)
 
+        @discord.ui.button(label="Next", style=discord.ButtonStyle.grey)
         async def show_next(self, button: discord.ui.Button, interaction: discord.Interaction):
             if interaction.user.id == self.user_id and self.current_index < len(self.cards) - 1:
                 self.current_index += 1
@@ -182,8 +184,13 @@ def init_bot_commands(bot):
         cards = get_user_collection(ctx.author.id, ctx.guild.id)
         if cards:
             view = PaginatedView(cards, ctx.author.name, ctx.author.id)
-            await ctx.send(embed=view.create_embed(), view=view)
+            await ctx.respond("Displaying your collection.", ephemeral=True)
+            await ctx.respond(embed=view.create_embed(), view=view)
         else:
-            await ctx.send("No cards available.")
+            await ctx.respond("No cards available.")
 
-        
+    
+    @bot.command(description="Reset cooldown for admins")
+    async def resetcooldown(ctx):
+        reset_cooldown(str(ctx.author.id))
+        await ctx.respond("Your cooldown has been reset.", ephemeral=True)

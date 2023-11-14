@@ -257,3 +257,15 @@ def check_user_cooldown(user_id: str):
         return False, None  # Default to cooldown in case of error
     finally:
         conn.close()
+
+def reset_cooldown(user_id: str):
+    conn = sqlite3.connect("database.sqlite")
+    cur = conn.cursor()
+
+    try:
+        cur.execute("DELETE FROM UserRequests WHERE userID = ?", (user_id,))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
+    finally:
+        conn.close()
