@@ -24,17 +24,21 @@ collection_icons= {
 def init_bot_commands(bot):
 
     class ClaimView(discord.ui.View):  
-        def __init__(self, card_name):
+        def __init__(self, card_name, user_id):
             super().__init__()
-            self.card_name = card_name  # Store the card's name as an attribute
+            self.card_name = card_name
+            self.user_id = user_id  # Store the user's ID who requested the card
 
         @discord.ui.button(label="Claim", style=discord.ButtonStyle.success, emoji="🏆")
         async def claim_callback(self, button, interaction):
-            # Use self.card_name to get the card's name
-            if claim_card(interaction.user.id, self.card_name, interaction.guild.id):
-                await interaction.response.send_message("Card claimed!", ephemeral=True)
+            if interaction.user.id == self.user_id:
+                if claim_card(interaction.user.id, self.card_name, interaction.guild.id):
+                    await interaction.response.send_message("Card claimed!", ephemeral=True)
+                else:
+                    await interaction.response.send_message("Card not available.", ephemeral=True)
             else:
-                await interaction.response.send_message("Card not available.", ephemeral=True)
+                await interaction.response.send_message("You cannot claim this card as it was not requested by you.", ephemeral=True)
+
 
     class ConfirmView(discord.ui.View):
         def __init__(self):
@@ -52,9 +56,10 @@ def init_bot_commands(bot):
             self.stop()
 
     class PaginatedView(discord.ui.View):
-        def __init__(self, cards, initial_index=0):
+        def __init__(self, cards, user_name, initial_index=0):
             super().__init__()
             self.cards = cards
+            self.user_name = user_name  
             self.current_index = initial_index
 
         @discord.ui.button(label="Previous", style=discord.ButtonStyle.grey)
@@ -71,17 +76,27 @@ def init_bot_commands(bot):
 
         @discord.ui.button(label="Remove", style=discord.ButtonStyle.danger, custom_id="remove")
         async def remove_card(self, button: discord.ui.Button, interaction: discord.Interaction):
+            card = self.cards[self.current_index]
+            card_name = card[0]  # Get the card's name
+
             # Ask for confirmation before removing
             confirm_view = ConfirmView()
-            await interaction.response.send_message("Are you sure you want to remove this card?", view=confirm_view, ephemeral=True)
+            await interaction.response.send_message(f"Are you sure you want to un-claim {card_name}?", view=confirm_view, ephemeral=True)
             await confirm_view.wait()
+
             if confirm_view.value:
-                # If confirmed, de-claim the card
-                card = self.cards[self.current_index]
-                if de_claim_card(interaction.user.id, card[0], interaction.guild.id):
-                    await interaction.followup.send("Card removed successfully.", ephemeral=True)
+                # If confirmed, un-claim the card
+                if de_claim_card(interaction.user.id, card_name, interaction.guild.id):
+                    await interaction.followup.send(f"{card_name} has been un-claimed successfully.", ephemeral=True)
                 else:
-                    await interaction.followup.send("Failed to remove the card.", ephemeral=True)
+                    await interaction.followup.send(f"Failed to un-claim {card_name}.", ephemeral=True)
+            else:
+                # If cancelled, let the user know
+                await interaction.followup.send(f"un-claiming of {card_name} cancelled.", ephemeral=True)
+
+            # Update the original message to remove the buttons
+            await interaction.edit_original_response(view=None)
+
 
         def create_embed(self):
             card = self.cards[self.current_index]
@@ -100,7 +115,7 @@ def init_bot_commands(bot):
             embed.set_footer(text=quote)  # Set footer to card's quote
 
             # Additional text for pagination
-            embed.set_footer(text=f"{embed.footer.text} | Card {self.current_index + 1} of {len(self.cards)}")
+            embed.set_footer(text=f"{embed.footer.text} | Card {self.current_index + 1} of {len(self.cards)} | {self.user_name}'s collection")
             return embed
 
 
@@ -120,7 +135,7 @@ def init_bot_commands(bot):
             return
         
         card = get_random_card()
-        
+    
         if card:
             name, collection_name, title, quote, image_url, rarity = card
             color = rarity_colors.get(rarity, discord.Colour.default())  
@@ -136,7 +151,7 @@ def init_bot_commands(bot):
             embed.set_image(url=image_url)
             embed.set_footer(text=quote)
 
-            await ctx.respond(embed=embed, view=ClaimView(name))
+            await ctx.respond(embed=embed, view=ClaimView(name, ctx.author.id))  # Pass the user's ID to ClaimView
         else:
             await ctx.respond("No cards available.")
 
@@ -144,7 +159,7 @@ def init_bot_commands(bot):
     async def mylist(ctx):
         cards = get_user_collection(ctx.author.id, ctx.guild.id)
         if cards:
-            view = PaginatedView(cards)
+            view = PaginatedView(cards, ctx.author.name)
             await ctx.send(embed=view.create_embed(), view=view)
         else:
             await ctx.send("No cards available.")
