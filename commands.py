@@ -55,15 +55,22 @@ def init_bot_commands(bot):
 
         def create_embed(self):
             card = self.cards[self.current_index]
-            embed_color = rarity_colors.get(card[5].lower(), discord.Colour.default())  # Get color based on rarity
+            name, collection_name, title, quote, image_url, rarity = card
+            color = rarity_colors.get(rarity.lower(), discord.Colour.default())  # Get color based on rarity
+            icon_url = collection_icons.get(collection_name.lower(), "")  # Get icon URL based on collection
 
             embed = discord.Embed(
-                title=card[0],  # Card's name
-                description=f"{card[1]}\n{card[2]}\n{card[3]}",  # Collection, Title, Quote
-                color=embed_color  # Set color based on rarity
+                title=name,  # Card's name
+                description=title,  # Card's title
+                color=color  # Set color based on rarity
             )
-            embed.set_image(url=card[4])  # Image URL
-            embed.set_footer(text=f"Card {self.current_index + 1} of {len(self.cards)}")
+            embed.set_thumbnail(url=icon_url)  # Set thumbnail based on collection
+            embed.set_author(name=collection_name)  # Set author to collection name
+            embed.set_image(url=image_url)  # Image URL
+            embed.set_footer(text=quote)  # Set footer to card's quote
+
+            # Additional text for pagination
+            embed.set_footer(text=f"{embed.footer.text} | Card {self.current_index + 1} of {len(self.cards)}")
             return embed
 
 
