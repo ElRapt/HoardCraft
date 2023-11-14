@@ -1,4 +1,5 @@
 import sqlite3
+import datetime
 from sqlite3 import Error
 from typing import Optional, Tuple
 
@@ -57,6 +58,12 @@ def init_db():
                                     FOREIGN KEY (userID) REFERENCES User(id)
                                 );"""
 
+    sql_create_user_requests_table = """CREATE TABLE IF NOT EXISTS UserRequests (
+                                            userID TEXT PRIMARY KEY,
+                                            firstRequestTime TIMESTAMP,
+                                            requestCount INTEGER
+                                        );"""
+
     # create a database connection
     conn = create_connection(database)
 
@@ -66,10 +73,12 @@ def init_db():
         create_table(conn, sql_create_user_table)
         create_table(conn, sql_create_collection_table)
         create_table(conn, sql_create_card_table)
+        create_table(conn, sql_create_user_requests_table)  # Add this line
         conn.commit()
         conn.close()
     else:
         print("Error! cannot create the database connection.")
+
 
 def get_random_card() -> Optional[Tuple[str, str, str, str, str, str]]:
     """
@@ -213,5 +222,38 @@ def de_claim_card(user_id: str, card_name: str, server_id: str) -> bool:
     except sqlite3.Error as e:
         print(f"An error occurred: {e}")
         return False
+    finally:
+        conn.close()
+
+
+def check_user_cooldown(user_id: str):
+    conn = sqlite3.connect("database.sqlite")
+    cur = conn.cursor()
+    current_time = datetime.datetime.now()
+
+    try:
+        cur.execute("SELECT firstRequestTime, requestCount FROM UserRequests WHERE userID = ?", (user_id,))
+        row = cur.fetchone()
+        if row:
+            first_request_time, request_count = row
+            first_request_time = datetime.datetime.fromisoformat(first_request_time)
+
+            if current_time - first_request_time < datetime.timedelta(hours=1):
+                if request_count >= 5:
+                    cooldown_end = first_request_time + datetime.timedelta(hours=1)
+                    return False, cooldown_end  # Cooldown active, return end time
+                else:
+                    cur.execute("UPDATE UserRequests SET requestCount = requestCount + 1 WHERE userID = ?", (user_id,))
+            else:
+                cur.execute("UPDATE UserRequests SET firstRequestTime = ?, requestCount = 1 WHERE userID = ?", (current_time.isoformat(), user_id))
+            conn.commit()
+            return True, None  # No cooldown
+        else:
+            cur.execute("INSERT INTO UserRequests (userID, firstRequestTime, requestCount) VALUES (?, ?, ?)", (user_id, current_time.isoformat(), 1))
+            conn.commit()
+            return True, None  # No cooldown
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
+        return False, None  # Default to cooldown in case of error
     finally:
         conn.close()

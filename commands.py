@@ -1,5 +1,6 @@
 import discord
-from database import get_random_card, get_user_collection, claim_card, de_claim_card
+import datetime
+from database import get_random_card, get_user_collection, claim_card, de_claim_card, check_user_cooldown
 
 
 rarity_colors = {
@@ -106,6 +107,18 @@ def init_bot_commands(bot):
 
     @bot.command(description="Get a random card")
     async def random(ctx):
+        can_request, cooldown_end = check_user_cooldown(str(ctx.author.id))
+        if not can_request:
+            current_time = datetime.datetime.now()
+            remaining_time = cooldown_end - current_time
+            hours, remainder = divmod(int(remaining_time.total_seconds()), 3600)
+            minutes, seconds = divmod(remainder, 60)
+
+            # Format the remaining time in a user-friendly way
+            time_str = f"{hours}h {minutes}m {seconds}s"
+            await ctx.respond(f"You have reached your limit of 5 requests per hour. Please wait for {time_str} before trying again.", ephemeral=True)
+            return
+        
         card = get_random_card()
         
         if card:
