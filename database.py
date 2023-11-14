@@ -138,7 +138,6 @@ def claim_card(user_id: str, card_name: str, server_id: str) -> bool:
     finally:
         conn.close()
 
-
 def get_user_collection(user_id: str, server_id: str) -> Optional[list]:
     """
     Fetches the user's collection in a specific server.
@@ -171,3 +170,18 @@ def get_user_collection(user_id: str, server_id: str) -> Optional[list]:
     
     return cards if cards else None
 
+def ensure_server_exists_in_db(server_id: str):
+    conn = sqlite3.connect("database.sqlite")
+    cur = conn.cursor()
+
+    try:
+        # Check if the server exists in the database
+        cur.execute("SELECT id FROM Server WHERE serverID = ?", (server_id,))
+        if cur.fetchone() is None:
+            # If not, add it
+            cur.execute("INSERT INTO Server (serverID) VALUES (?)", (server_id,))
+            conn.commit()
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
+    finally:
+        conn.close()
