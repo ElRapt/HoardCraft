@@ -1,6 +1,6 @@
 import discord
 import datetime
-from database import get_random_card, get_user_collection, claim_card, de_claim_card, check_user_cooldown, reset_cooldown
+from database import *
 
 
 rarity_colors = {
@@ -24,15 +24,15 @@ collection_icons= {
 def init_bot_commands(bot):
 
     class ClaimView(discord.ui.View):  
-        def __init__(self, card_name, user_id):
+        def __init__(self, card_id, user_id):
             super().__init__()
-            self.card_name = card_name
+            self.card_id = card_id
             self.user_id = user_id  # Store the user's ID who requested the card
 
         @discord.ui.button(label="Claim", style=discord.ButtonStyle.success, emoji="🏆")
         async def claim_callback(self, button, interaction):
-            if interaction.user.id == self.user_id:
-                if claim_card(interaction.user.id, self.card_name, interaction.guild.id):
+            if str(interaction.user.id) == self.user_id:
+                if claim_card(interaction.user.id, self.card_id, interaction.guild.id):
                     await interaction.response.send_message("Card claimed!", ephemeral=True)
                 else:
                     await interaction.response.send_message("Card not available.", ephemeral=True)
@@ -146,6 +146,9 @@ def init_bot_commands(bot):
 
     @bot.command(description="Get a random card")
     async def random(ctx):
+        user_id = str(ctx.author.id)
+        server_id = str(ctx.guild.id)
+        
         can_request, cooldown_end = check_user_cooldown(str(ctx.author.id))
         if not can_request:
             current_time = datetime.datetime.now()
@@ -161,21 +164,29 @@ def init_bot_commands(bot):
         card = get_random_card()
     
         if card:
-            name, collection_name, title, quote, image_url, rarity = card
-            color = rarity_colors.get(rarity, discord.Colour.default())  
-            icon_url = collection_icons.get(collection_name.lower(), "")  
+            card_id, name, collection_name, title, quote, image_url, rarity = card
 
-            embed = discord.Embed(
-                title=name,
-                description=title,
-                color=color
-            )
-            embed.set_thumbnail(url=icon_url)
-            embed.set_author(name=collection_name)
-            embed.set_image(url=image_url)
-            embed.set_footer(text=quote)
+            if check_card_ownership(user_id, card_id):
+                # User already owns this card, give dust instead
+                dust_earned = calculate_dust_earned(rarity)
+                update_dust_balance(user_id, server_id, dust_earned)
+                await ctx.respond(f"You already own {name}. You earned {dust_earned} dust!", ephemeral=True)
+            else:
+                # User doesn't own the card, allow them to claim
+                color = rarity_colors.get(rarity, discord.Colour.default())  
+                icon_url = collection_icons.get(collection_name.lower(), "")  
 
-            await ctx.respond(embed=embed, view=ClaimView(name, ctx.author.id))  # Pass the user's ID to ClaimView
+                embed = discord.Embed(
+                    title=name,
+                    description=title,
+                    color=color
+                )
+                embed.set_thumbnail(url=icon_url)
+                embed.set_author(name=collection_name)
+                embed.set_image(url=image_url)
+                embed.set_footer(text=quote)
+
+                await ctx.respond(embed=embed, view=ClaimView(card_id, user_id))  # Pass the card ID and user's ID to ClaimView
         else:
             await ctx.respond("No cards available.")
 
@@ -189,8 +200,20 @@ def init_bot_commands(bot):
         else:
             await ctx.respond("No cards available.")
 
+
+    @bot.command(description="Check your dust balance")
+    async def checkdust(ctx):
+        user_id = str(ctx.author.id)
+        server_id = str(ctx.guild.id)
+
+        dust_balance = get_dust_balance(user_id, server_id)
+        await ctx.respond(f"Your dust balance in this server is: {dust_balance} dust", ephemeral=True)
+
+
     
     @bot.command(description="Reset cooldown for admins")
     async def resetcooldown(ctx):
         reset_cooldown(str(ctx.author.id))
         await ctx.respond("Your cooldown has been reset.", ephemeral=True)
+
+
