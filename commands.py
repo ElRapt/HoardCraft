@@ -207,7 +207,20 @@ def init_bot_commands(bot):
         server_id = str(ctx.guild.id)
 
         dust_balance = get_dust_balance(user_id, server_id)
-        await ctx.respond(f"Your dust balance in this server is: {dust_balance} dust", ephemeral=True)
+
+        thumbnail_url = "https://static.wikia.nocookie.net/hearthstone/images/6/6f/ArcaneDustIcon-62x90.png/revision/latest?cb=20160124205848"  
+
+        embed = discord.Embed(
+            title="Dust Balance",
+            description=f"{ctx.author.display_name}, here's your dust balance:",
+            color=discord.Color.blue()  # You can change the color
+        )
+        embed.set_thumbnail(url=thumbnail_url)
+        embed.add_field(name="Balance", value=f"{dust_balance} dust", inline=False)
+        embed.set_footer(text="HoardCraft Dust System")
+
+        await ctx.respond(embed=embed)
+
 
 
     
