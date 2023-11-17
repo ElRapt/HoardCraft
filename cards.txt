@@ -1,4 +1,4 @@
-Sylvanas Windrunner, , legendary, , , 
+Sylvanas Windrunner, 1 , legendary, The Banshee Queen, We are the Forsaken. We will slaughter anyone who stands in our way. , https://static.wikia.nocookie.net/wow/images/e/e2/Sylvanas_JCC.jpg/revision/latest/scale-to-width-down/392?cb=20230811211943&path-prefix=fr
 Dumas, , common, , , 
 Clarice Foster, , common, , , 
 Gunter Hansen, , common, , , 
