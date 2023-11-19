@@ -5,5 +5,7 @@ from database.init_db import init_db
 
 init_db()
 credentials = load_credentials('credentials.json')
-bot = MyBot()
+intents = discord.Intents.default()
+bot = MyBot(intents=intents)
+
 bot.run(credentials['token'])

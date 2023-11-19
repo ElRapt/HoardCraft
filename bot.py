@@ -1,10 +1,11 @@
 import discord
-from commands import init_bot_commands
 from database.utils import ensure_server_exists_in_db
 
 cogs_list = [
     'random',
     'shop',
+    'utils',
+    'list'
 ]
 
 rarity_colors = {

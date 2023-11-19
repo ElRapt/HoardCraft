@@ -28,7 +28,7 @@ class Random(commands.Cog):
         self.bot = bot
 
     
-    @commands.slash_command(description="Get a random card")
+    @discord.slash_command(description="Get a random card")
     async def random(self, ctx):
         user_id = str(ctx.author.id)
         server_id = str(ctx.guild.id)

@@ -1,7 +1,7 @@
 import discord
 import datetime
 from discord.ext import commands
-from database.shop import get_shop_inventory
+from database.shop import get_shop_inventory, craft_card
 from database.utils import check_card_ownership, check_user_dust_balance
 
 rarity_colors = {
@@ -88,7 +88,8 @@ class Shop(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.slash_command(description="View the card shop")
+
+    @discord.slash_command(description="View the card shop")
     async def shop(self, ctx):
         user_id = ctx.author.id
         shop_inventory = get_shop_inventory() 
