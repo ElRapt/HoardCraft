@@ -129,70 +129,6 @@ def init_bot_commands(bot):
             embed.set_footer(text=f"{embed.footer.text} | Card {self.current_index + 1} of {len(self.cards)} | {self.user_name}'s collection")
             return embed
 
-    class ShopView(discord.ui.View):
-        def __init__(self, shop_inventory, user_id, initial_index=0):
-            super().__init__()
-            self.shop_inventory = shop_inventory
-            self.user_id = user_id
-            self.current_index = initial_index
-            self.update_buttons()
-
-        def update_buttons(self):
-            # Enable/Disable Previous button
-            self.children[0].disabled = self.current_index <= 0
-
-            # Enable/Disable Next button
-            self.children[1].disabled = self.current_index >= len(self.shop_inventory) - 1
-
-            # Check card ownership and dust balance for enabling/disabling Craft button
-            card_id, cost = self.shop_inventory[self.current_index][0], self.shop_inventory[self.current_index][-1]
-            owns_card = check_card_ownership(str(self.user_id), card_id)
-            has_enough_dust = check_user_dust_balance(str(self.user_id), cost)
-            self.children[2].disabled = owns_card or not has_enough_dust
-
-        @discord.ui.button(label="Previous", style=discord.ButtonStyle.grey)
-        async def show_previous(self, button, interaction):
-            if self.current_index > 0:
-                self.current_index -= 1
-                self.update_buttons()
-                await interaction.response.edit_message(embed=self.create_embed(), view=self)
-
-        @discord.ui.button(label="Next", style=discord.ButtonStyle.grey)
-        async def show_next(self, button, interaction):
-            if self.current_index < len(self.shop_inventory) - 1:
-                self.current_index += 1
-                self.update_buttons()
-                await interaction.response.edit_message(embed=self.create_embed(), view=self)
-
-        @discord.ui.button(label="Craft", style=discord.ButtonStyle.green)
-        async def craft_card(self, button, interaction):
-            card = self.shop_inventory[self.current_index]
-            card_id, card_cost = card[0], card[-1]  # Assuming the cost is the last element
-            if craft_card(interaction.user.id, card_id, interaction.guild.id, card_cost):
-                await interaction.response.send_message(f"You have crafted {card[1]}!", ephemeral=True)
-            else:
-                await interaction.response.send_message("Not enough dust or an error occurred.", ephemeral=True)
-            self.update_buttons()
-            await interaction.edit_original_message(view=self)
-
-        def create_embed(self):
-            card = self.shop_inventory[self.current_index]
-            card_id, name, collection_name, title, quote, image_url, rarity, cost = card  # Corrected to unpack 8 elements
-
-            color = rarity_colors.get(rarity.lower(), discord.Colour.default())  # Get color based on rarity
-
-            embed = discord.Embed(
-                title=name,  # Card's name
-                description=title,  # Card's title
-                color=color  # Set color based on rarity
-            )
-            embed.set_thumbnail(url=image_url)  # Set thumbnail based on collection
-            embed.set_author(name=collection_name)  # Set author to collection name
-            embed.set_footer(text=f"Cost: {cost} dust | Card {self.current_index + 1} of {len(self.shop_inventory)}")
-
-            return embed
-
-
 
     @bot.command(description="List the user's cards")
     async def mylist(ctx):
@@ -227,12 +163,7 @@ def init_bot_commands(bot):
 
 
 
-    @bot.command(description="View the card shop")
-    async def shop(ctx):
-        user_id = ctx.author.id
-        shop_inventory = get_shop_inventory() 
-        view = ShopView(shop_inventory, user_id)
-        await ctx.send(embed=view.create_embed(), view=view)
+
 
 
     

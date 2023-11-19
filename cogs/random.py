@@ -6,22 +6,6 @@ from database.cards import get_random_card
 from database.dust import update_dust_balance, calculate_dust_earned
 from database.claim import claim_card
 
-rarity_colors = {
-    'legendary': discord.Colour.orange(),
-    'epic': discord.Colour.purple(),
-    'rare': discord.Colour.blue(),
-    'uncommon': discord.Colour.green(),
-    'common': discord.Colour.greyple(),  
-}
-
-collection_icons= {
-    'forsaken': "https://static.wikia.nocookie.net/wowpedia/images/7/72/Forsaken_Crest.png/revision/latest?cb=20151113054325",
-    'scourge': "https://static.wikia.nocookie.net/wowpedia/images/3/37/Warcraft_III_Reforged_-_Undead_Icon.png/revision/latest?cb=20210227012440",
-    'alliance': "https://static.wikia.nocookie.net/wowpedia/images/d/da/Alliance_Crest.png/revision/latest?cb=20180710141058",
-    'night elves': "https://static.wikia.nocookie.net/wowpedia/images/b/bc/Warcraft_III_Reforged_-_Night_Elves_Icon.png/revision/latest?cb=20210227012747",
-    'scarlet crusade': "https://static.wikia.nocookie.net/wowpedia/images/7/72/Scarlet_Crusade_logo.png/revision/latest?cb=20080730021543",
-    'horde': "https://static.wikia.nocookie.net/wowpedia/images/0/08/Horde_Crest.png/revision/latest?cb=20151113053903"
-}
 
 class ClaimView(discord.ui.View):  
     def __init__(self, card_id, user_id):
@@ -42,8 +26,6 @@ class ClaimView(discord.ui.View):
 class Random(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
-
 
     
     @commands.slash_command(description="Get a random card")
