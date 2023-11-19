@@ -1,6 +1,6 @@
 import discord
 from commands import init_bot_commands
-from database import ensure_server_exists_in_db
+from database.utils import ensure_server_exists_in_db
 
 class MyBot(discord.bot.Bot):
     def __init__(self, *args, **kwargs):
