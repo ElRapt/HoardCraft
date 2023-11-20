@@ -7,6 +7,23 @@ from database.dust import get_dust_balance, update_dust_balance, calculate_dust_
 from utils.views import ClaimView
 
 
+rarity_colors = {
+    'legendary': discord.Colour.orange(),
+    'epic': discord.Colour.purple(),
+    'rare': discord.Colour.dark_blue(),
+    'uncommon': discord.Colour.green(),
+    'common': discord.Colour.greyple(),  
+}
+
+collection_icons= {
+    'forsaken': "https://static.wikia.nocookie.net/wowpedia/images/7/72/Forsaken_Crest.png/revision/latest?cb=20151113054325",
+    'scourge': "https://static.wikia.nocookie.net/wowpedia/images/3/37/Warcraft_III_Reforged_-_Undead_Icon.png/revision/latest?cb=20210227012440",
+    'alliance': "https://static.wikia.nocookie.net/wowpedia/images/d/da/Alliance_Crest.png/revision/latest?cb=20180710141058",
+    'night elves': "https://static.wikia.nocookie.net/wowpedia/images/b/bc/Warcraft_III_Reforged_-_Night_Elves_Icon.png/revision/latest?cb=20210227012747",
+    'scarlet crusade': "https://static.wikia.nocookie.net/wowpedia/images/7/72/Scarlet_Crusade_logo.png/revision/latest?cb=20080730021543",
+    'horde': "https://static.wikia.nocookie.net/wowpedia/images/0/08/Horde_Crest.png/revision/latest?cb=20151113053903"
+}
+
 class Random(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -41,6 +58,7 @@ class Random(commands.Cog):
                 await ctx.respond(f"You already own {name}. You earned {dust_earned} dust!", ephemeral=True)
             else:
                 # User doesn't own the card, allow them to claim
+                rarity = rarity.lstrip()
                 color = rarity_colors.get(rarity, discord.Colour.default())  
                 icon_url = collection_icons.get(collection_name.lower(), "")  
 
