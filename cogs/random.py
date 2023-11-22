@@ -33,25 +33,28 @@ class Random(commands.Cog):
     async def random(self, ctx):
         user_id = str(ctx.author.id)
         server_id = str(ctx.guild.id)
-        
-        can_request, cooldown_end = check_user_cooldown(str(ctx.author.id))
+
+        can_request, cooldown_end = check_user_cooldown(user_id, server_id)
         if not can_request:
             current_time = datetime.datetime.now()
-            remaining_time = cooldown_end - current_time
-            hours, remainder = divmod(int(remaining_time.total_seconds()), 3600)
-            minutes, seconds = divmod(remainder, 60)
+            if cooldown_end is not None:
+                remaining_time = cooldown_end - current_time
+                hours, remainder = divmod(int(remaining_time.total_seconds()), 3600)
+                minutes, seconds = divmod(remainder, 60)
 
-            # Format the remaining time in a user-friendly way
-            time_str = f"{hours}h {minutes}m {seconds}s"
-            await ctx.respond(f"You have reached your limit of 5 requests per hour. Please wait for {time_str} before trying again.", ephemeral=True)
+                # Format the remaining time in a user-friendly way
+                time_str = f"{hours}h {minutes}m {seconds}s"
+                await ctx.respond(f"You have reached your limit of 5 requests per hour. Please wait for {time_str} before trying again.", ephemeral=True)
+            else:
+                # Handle the case when cooldown_end is None
+                await ctx.respond("You are currently on cooldown, but the remaining time could not be calculated.", ephemeral=True)
             return
-        
         card = get_random_card()
     
         if card:
             card_id, name, collection_name, title, quote, image_url, rarity = card
 
-            if check_card_ownership(user_id, card_id):
+            if check_card_ownership(user_id, card_id, server_id):
                 # User already owns this card, give dust instead
                 dust_earned = calculate_dust_earned(rarity)
                 update_dust_balance(user_id, server_id, dust_earned)

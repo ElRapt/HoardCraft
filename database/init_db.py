@@ -34,9 +34,9 @@ def init_db():
                                 );"""
 
     sql_create_user_table = """CREATE TABLE IF NOT EXISTS User (
-                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                    userID TEXT UNIQUE,
+                                    userID TEXT,
                                     serverID INTEGER,
+                                    PRIMARY KEY (userID, serverID),
                                     FOREIGN KEY (serverID) REFERENCES Server(id)
                                 );"""
 
@@ -53,29 +53,35 @@ def init_db():
                                     title TEXT,
                                     quote TEXT,
                                     imageURL TEXT,
-                                    FOREIGN KEY (collectionID) REFERENCES Collection(id),
+                                    FOREIGN KEY (collectionID) REFERENCES Collection(id)
                                 );"""
 
+    # Updated UserRequests table with serverID
     sql_create_user_requests_table = """CREATE TABLE IF NOT EXISTS UserRequests (
-                                            userID TEXT PRIMARY KEY,
+                                            userID TEXT,
+                                            serverID TEXT,
                                             firstRequestTime TIMESTAMP,
-                                            requestCount INTEGER
+                                            requestCount INTEGER,
+                                            PRIMARY KEY (userID, serverID),
+                                            FOREIGN KEY (userID, serverID) REFERENCES User(userID, serverID)
                                         );"""
 
+    # Updated UserCard table with the composite primary key (userID, serverID, cardID)
     sql_create_user_card_table = """CREATE TABLE IF NOT EXISTS UserCard (
-                                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                            userID INTEGER,
-                                            cardID INTEGER,
-                                            FOREIGN KEY (userID) REFERENCES User(id),
+                                            userID TEXT NOT NULL,
+                                            serverID INTEGER NOT NULL,
+                                            cardID INTEGER NOT NULL,
+                                            PRIMARY KEY (userID, serverID, cardID),
+                                            FOREIGN KEY (userID, serverID) REFERENCES User(userID, serverID),
                                             FOREIGN KEY (cardID) REFERENCES Card(id)
                                         );"""
 
     sql_create_dust_balance_table = """CREATE TABLE IF NOT EXISTS DustBalance (
-                                           userID INTEGER,
-                                           serverID INTEGER,
+                                           userID TEXT NOT NULL,
+                                           serverID INTEGER NOT NULL,
                                            balance INTEGER,
                                            PRIMARY KEY (userID, serverID),
-                                           FOREIGN KEY (userID) REFERENCES User(id),
+                                           FOREIGN KEY (userID, serverID) REFERENCES User(userID, serverID),
                                            FOREIGN KEY (serverID) REFERENCES Server(id)
                                        );"""
 
@@ -88,9 +94,9 @@ def init_db():
         create_table(conn, sql_create_user_table)
         create_table(conn, sql_create_collection_table)
         create_table(conn, sql_create_card_table)
-        create_table(conn, sql_create_user_requests_table)
-        create_table(conn, sql_create_user_card_table)  # New table for user cards
-        create_table(conn, sql_create_dust_balance_table)  # New table for dust balance
+        create_table(conn, sql_create_user_requests_table)  # Updated table for user requests
+        create_table(conn, sql_create_user_card_table)  # Updated table for user cards
+        create_table(conn, sql_create_dust_balance_table)  # Table for dust balance
         conn.commit()
         conn.close()
     else:

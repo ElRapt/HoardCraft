@@ -141,10 +141,11 @@ class ClaimView(discord.ui.View):
 
 
 class ShopView(discord.ui.View):
-    def __init__(self, shop_inventory, user_id, initial_index=0):
+    def __init__(self, shop_inventory, user_id, server_id, initial_index=0):
         super().__init__()
         self.shop_inventory = shop_inventory
         self.user_id = user_id
+        self.server_id = server_id
         self.current_index = initial_index
         self.update_buttons()
 
@@ -155,11 +156,15 @@ class ShopView(discord.ui.View):
         # Enable/Disable Next button
         self.children[1].disabled = self.current_index >= len(self.shop_inventory) - 1
 
-        # Check card ownership and dust balance for enabling/disabling Craft button
         card_id, cost = self.shop_inventory[self.current_index][0], self.shop_inventory[self.current_index][-1]
-        owns_card = check_card_ownership(str(self.user_id), card_id)
-        has_enough_dust = get_dust_balance(str(self.user_id), cost)
+        
+        server_id_int = int(self.server_id)
+
+        owns_card = check_card_ownership(self.user_id, card_id, server_id_int)
+        has_enough_dust = get_dust_balance(self.user_id, server_id_int) >= cost
+
         self.children[2].disabled = owns_card or not has_enough_dust
+
 
     @discord.ui.button(label="Previous", style=discord.ButtonStyle.grey)
     async def show_previous(self, button, interaction):
@@ -184,7 +189,6 @@ class ShopView(discord.ui.View):
         else:
             await interaction.response.send_message("Not enough dust or an error occurred.", ephemeral=True)
         self.update_buttons()
-        await interaction.edit_original_message(view=self)
 
     def create_embed(self):
         card = self.shop_inventory[self.current_index]

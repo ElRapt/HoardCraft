@@ -32,7 +32,7 @@ class Utils(commands.Cog):
     
     @discord.slash_command(description="Reset cooldown for admins")
     async def resetcooldown(self, ctx):
-        reset_cooldown(str(ctx.author.id))
+        reset_cooldown(str(ctx.author.id), str(ctx.guild.id))   
         await ctx.respond("Your cooldown has been reset.", ephemeral=True)
     
 def setup(bot):

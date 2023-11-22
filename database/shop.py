@@ -21,30 +21,22 @@ def craft_card(user_id: str, card_id: int, server_id: int, cost: int) -> bool:
     cur = conn.cursor()
 
     try:
-
-        # Check if user exists
-        cur.execute("SELECT id FROM User WHERE userID = ? AND serverId = ?", (user_id, server_id))
-        user_row = cur.fetchone()
-
-        if user_row is None:
-            # Create a new user if not exists
-            cur.execute("INSERT INTO User (userID, serverID) VALUES (?, ?)", (user_id, server_id))
-            user_db_id = cur.lastrowid
-        else:
-            user_db_id = user_row[0]
-
         # Check and update the user's dust balance
-        cur.execute("SELECT balance FROM DustBalance WHERE userID = ?", (user_id,))
+        cur.execute("SELECT balance FROM DustBalance WHERE userID = ? AND serverID = ?", (user_id, server_id))
         result = cur.fetchone()
         if result and result[0] >= cost:
             new_balance = result[0] - cost
-            cur.execute("UPDATE DustBalance SET balance = ? WHERE userID = ?", (new_balance, user_id))
+            cur.execute("UPDATE DustBalance SET balance = ? WHERE userID = ? AND serverID = ?", (new_balance, user_id, server_id))
         else:
             return False  # Not enough dust
 
+        # Check if the user already owns the card
+        cur.execute("SELECT 1 FROM UserCard WHERE userID = ? AND serverID = ? AND cardID = ?", (user_id, server_id, card_id))
+        if cur.fetchone() is not None:
+            return False  # User already owns the card
 
         # Add the card to the user's collection
-        cur.execute("INSERT INTO UserCard (userID, cardID) VALUES (?, ?)", (user_db_id, card_id))
+        cur.execute("INSERT INTO UserCard (userID, serverID, cardID) VALUES (?, ?, ?)", (user_id, server_id, card_id))
         conn.commit()
         return True
     except sqlite3.Error as e:
@@ -52,6 +44,7 @@ def craft_card(user_id: str, card_id: int, server_id: int, cost: int) -> bool:
         return False
     finally:
         conn.close()
+
 
 def get_shop_inventory() -> list:
     """

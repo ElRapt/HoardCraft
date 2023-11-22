@@ -12,8 +12,9 @@ class Shop(commands.Cog):
     @discord.slash_command(description="View the card shop")
     async def shop(self, ctx):
         user_id = ctx.author.id
+        server_id = ctx.guild.id
         shop_inventory = get_shop_inventory() 
-        view = ShopView(shop_inventory, user_id)
+        view = ShopView(shop_inventory, user_id, server_id)
         await ctx.respond(embed=view.create_embed(), view=view)
 
 

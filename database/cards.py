@@ -30,17 +30,17 @@ def get_random_card() -> Optional[Tuple[int, str, str, str, str, str, str]]:
     
     return card if card else None
 
-def get_user_collection(user_id: str, server_id: str) -> Optional[list]:
+def get_user_collection(user_id: str, server_id: int) -> Optional[list]:
     """
     Fetches the user's collection in a specific server.
 
     Args:
-        user_id (str): The user's ID.
-        server_id (str): The server's ID where the collection is being fetched.
+        user_id (str): The user's Discord ID.
+        server_id (int): The Discord server's ID where the collection is being fetched.
 
     Returns:
         A list of tuples containing the card's name, collection name, title, quote, imageURL, and rarity if found.
-        None if no card is available.
+        None if no cards are available.
     """
     conn = sqlite3.connect("database.sqlite")
     cur = conn.cursor()
@@ -50,8 +50,7 @@ def get_user_collection(user_id: str, server_id: str) -> Optional[list]:
         SELECT ca.name, co.name, ca.title, ca.quote, ca.imageURL, ca.rarity FROM UserCard uc
         JOIN Card ca ON uc.cardID = ca.id
         JOIN Collection co ON ca.collectionID = co.id
-        JOIN User u ON uc.userID = u.id
-        WHERE u.userID = ? AND u.serverID = ?;
+        WHERE uc.userID = ? AND uc.serverID = ?;
         """, (user_id, server_id))
         cards = cur.fetchall()
     except sqlite3.Error as e:
@@ -61,4 +60,5 @@ def get_user_collection(user_id: str, server_id: str) -> Optional[list]:
         conn.close()
     
     return cards if cards else None
+
 
