@@ -22,8 +22,10 @@ collection_icons= {
     'night elves': "https://static.wikia.nocookie.net/wowpedia/images/b/bc/Warcraft_III_Reforged_-_Night_Elves_Icon.png/revision/latest?cb=20210227012747",
     'scarlet crusade': "https://static.wikia.nocookie.net/wowpedia/images/7/72/Scarlet_Crusade_logo.png/revision/latest?cb=20080730021543",
     'horde': "https://static.wikia.nocookie.net/wowpedia/images/0/08/Horde_Crest.png/revision/latest?cb=20151113053903",
-    "quel'thalas": "https://static.wikia.nocookie.net/wowpedia/images/d/d9/Icon_of_Blood.png/revision/latest?cb=20151113053547"
-}
+    "quel'thalas": "https://static.wikia.nocookie.net/wowpedia/images/d/d9/Icon_of_Blood.png/revision/latest?cb=20151113053547",
+    'dragon flights': "https://static.wikia.nocookie.net/wowpedia/images/a/a4/Dracthyr_Crest.png/revision/latest?cb=20221115173914",
+    'blackrock' : "https://static.wikia.nocookie.net/wowpedia/images/1/1d/Blackrock_Crest.png/revision/latest?cb=20141010174912"
+    }
 
 class Random(commands.Cog):
     def __init__(self, bot):

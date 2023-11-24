@@ -1,6 +1,6 @@
 import discord
 from bot import MyBot
-from credentials import load_credentials
+from utils.credentials import load_credentials
 from database.init_db import init_db
 
 init_db()
