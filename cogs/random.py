@@ -24,7 +24,8 @@ collection_icons= {
     'horde': "https://static.wikia.nocookie.net/wowpedia/images/0/08/Horde_Crest.png/revision/latest?cb=20151113053903",
     "quel'thalas": "https://static.wikia.nocookie.net/wowpedia/images/d/d9/Icon_of_Blood.png/revision/latest?cb=20151113053547",
     'dragon flights': "https://static.wikia.nocookie.net/wowpedia/images/a/a4/Dracthyr_Crest.png/revision/latest?cb=20221115173914",
-    'blackrock' : "https://static.wikia.nocookie.net/wowpedia/images/1/1d/Blackrock_Crest.png/revision/latest?cb=20141010174912"
+    'blackrock' : "https://static.wikia.nocookie.net/wowpedia/images/1/1d/Blackrock_Crest.png/revision/latest?cb=20141010174912",
+    'old gods': "https://static.wikia.nocookie.net/wowpedia/images/7/7a/Void_Elf_Crest_%28early%29.png/revision/latest?cb=20171104172306"
     }
 
 class Random(commands.Cog):
