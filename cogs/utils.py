@@ -29,7 +29,7 @@ class Utils(commands.Cog):
 
         await ctx.respond(embed=embed)
 
-    
+    @commands.has_permissions(administrator=True)
     @discord.slash_command(description="Reset cooldown for admins")
     async def resetcooldown(self, ctx):
         reset_cooldown(str(ctx.author.id), str(ctx.guild.id))   

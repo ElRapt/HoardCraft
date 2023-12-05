@@ -5,7 +5,8 @@ cogs_list = [
     'random',
     'shop',
     'utils',
-    'list'
+    'list',
+    'help'
 ]
 
 
