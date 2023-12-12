@@ -1,7 +1,7 @@
 import discord
 import datetime
 from discord.ext import commands
-from database.utils import check_user_cooldown, check_card_ownership, reset_cooldown
+from database.utils import reset_cooldown, reset_shop
 from database.dust import get_dust_balance
 
 
@@ -34,6 +34,13 @@ class Utils(commands.Cog):
     async def resetcooldown(self, ctx):
         reset_cooldown(str(ctx.author.id), str(ctx.guild.id))   
         await ctx.respond("Your cooldown has been reset.", ephemeral=True)
+        
+    
+    @commands.has_permissions(administrator=True)
+    @discord.slash_command(description="Reset shop for admins")
+    async def resetshop(self, ctx):
+        reset_shop(str(ctx.guild.id))   
+        await ctx.respond("The shop has been reset.", ephemeral=True)
     
 def setup(bot):
     bot.add_cog(Utils(bot))

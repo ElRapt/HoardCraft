@@ -46,29 +46,72 @@ def craft_card(user_id: str, card_id: int, server_id: int, cost: int) -> bool:
         conn.close()
 
 
-def get_shop_inventory() -> list:
-    """
-    Retrieves the current inventory of cards in the shop.
+import datetime
 
-    Returns:
-        list: A list of tuples representing the cards in the shop.
-    """
+last_updated_cache = {}  # Global cache for last updated times
+
+def get_shop_inventory(server_id: str) -> list:
     conn = sqlite3.connect("database.sqlite")
     cur = conn.cursor()
+    current_time = datetime.datetime.now()
 
     try:
+        # Check if shop needs updating from cache
+        last_updated = last_updated_cache.get(server_id)
+        if last_updated is None or current_time - last_updated >= datetime.timedelta(hours=1):
+            update_shop_inventory(server_id)
+            last_updated = datetime.datetime.now()
+            last_updated_cache[server_id] = last_updated
+
+        # Fetch the inventory
         cur.execute("""
-        SELECT c.id, c.name, co.name, c.title, c.quote, c.imageURL, c.rarity, (CASE c.rarity WHEN 'legendary' THEN 1000 WHEN 'epic' THEN 400 WHEN 'rare' THEN 200 WHEN 'uncommon' THEN 100 ELSE 50 END) as cost
-        FROM Card c
+        SELECT c.id, c.name, co.name, c.title, c.quote, c.imageURL, c.rarity,
+               (CASE c.rarity WHEN 'legendary' THEN 1000 WHEN 'epic' THEN 400 WHEN 'rare' THEN 200 WHEN 'uncommon' THEN 100 ELSE 50 END) as cost
+        FROM Shop s
+        JOIN Card c ON c.id IN (s.item1, s.item2, s.item3)
         JOIN Collection co ON c.collectionID = co.id
-        ORDER BY RANDOM()
-        LIMIT 3;
-        """)
+        WHERE s.serverID = ?
+        """, (server_id,))
         cards = cur.fetchall()
         return cards
+
     except sqlite3.Error as e:
         print(f"An error occurred: {e}")
         return []
     finally:
         conn.close()
 
+
+
+def update_shop_inventory(server_id: int):
+    """
+    Updates the shop inventory for a specific server.
+
+    Args:
+        server_id (int): The ID of the server.
+    """
+    conn = sqlite3.connect("database.sqlite")
+    cur = conn.cursor()
+
+    try:
+        # Select 3 new random items for the shop
+        cur.execute("""
+        SELECT id FROM Card
+        ORDER BY RANDOM()
+        LIMIT 3
+        """)
+        items = [item[0] for item in cur.fetchall()]
+
+        # Update the Shop table with new items and timestamp
+        cur.execute("""
+        INSERT INTO Shop (serverID, lastUpdated, item1, item2, item3)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(serverID)
+        DO UPDATE SET lastUpdated = CURRENT_TIMESTAMP, item1 = ?, item2 = ?, item3 = ?
+        """, (server_id, datetime.datetime.now(), *items, *items))
+
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
+    finally:
+        conn.close()

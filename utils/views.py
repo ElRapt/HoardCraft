@@ -1,7 +1,8 @@
 import discord
+import datetime
 from database.claim import de_claim_card, claim_card
 from database.dust import get_dust_balance
-from database.utils import check_card_ownership
+from database.utils import check_card_ownership, get_next_reset_time
 from database.shop import craft_card
 
 rarity_colors = {
@@ -195,18 +196,25 @@ class ShopView(discord.ui.View):
         self.update_buttons()
 
     def create_embed(self):
-        card = self.shop_inventory[self.current_index]
-        card_id, name, collection_name, title, quote, image_url, rarity, cost = card  # Corrected to unpack 8 elements
+            card = self.shop_inventory[self.current_index]
+            card_id, name, collection_name, title, quote, image_url, rarity, cost = card
 
-        color = rarity_colors.get(rarity.lower(), discord.Colour.default())  # Get color based on rarity
+            color = rarity_colors.get(rarity.lower(), discord.Colour.default())
 
-        embed = discord.Embed(
-            title=name,  # Card's name
-            description=title,  # Card's title
-            color=color  # Set color based on rarity
-        )
-        embed.set_thumbnail(url=image_url)  # Set thumbnail based on collection
-        embed.set_author(name=collection_name)  # Set author to collection name
-        embed.set_footer(text=f"Cost: {cost} dust | Card {self.current_index + 1} of {len(self.shop_inventory)}")
+            embed = discord.Embed(
+                title=name,
+                description=title,
+                color=color
+            )
+            embed.set_thumbnail(url=image_url)
+            embed.set_author(name=collection_name)
 
-        return embed
+            # Calculate time remaining until shop reset
+            reset_time = get_next_reset_time(self.server_id)
+            time_remaining = reset_time - datetime.datetime.now()
+            hours, remainder = divmod(int(time_remaining.total_seconds()), 3600)
+            minutes, seconds = divmod(remainder, 60)
+
+            embed.set_footer(text=f"Cost: {cost} dust | Card {self.current_index + 1} of {len(self.shop_inventory)} | Shop resets in {hours}h {minutes}m {seconds}s")
+
+            return embed

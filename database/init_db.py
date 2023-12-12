@@ -84,6 +84,18 @@ def init_db():
                                            FOREIGN KEY (userID, serverID) REFERENCES User(userID, serverID),
                                            FOREIGN KEY (serverID) REFERENCES Server(id)
                                        );"""
+                                       
+    
+    sql_create_shop_table = """CREATE TABLE IF NOT EXISTS Shop (
+                                        serverID INTEGER PRIMARY KEY,
+                                        lastUpdated TIMESTAMP,
+                                        item1 INTEGER,
+                                        item2 INTEGER,
+                                        item3 INTEGER,
+                                        FOREIGN KEY(item1) REFERENCES Card(id),
+                                        FOREIGN KEY(item2) REFERENCES Card(id),
+                                        FOREIGN KEY(item3) REFERENCES Card(id)
+                                    );"""
 
     # create a database connection
     conn = create_connection(database)
@@ -97,6 +109,7 @@ def init_db():
         create_table(conn, sql_create_user_requests_table)  # Updated table for user requests
         create_table(conn, sql_create_user_card_table)  # Updated table for user cards
         create_table(conn, sql_create_dust_balance_table)  # Table for dust balance
+        create_table(conn, sql_create_shop_table)  
         conn.commit()
         conn.close()
     else:

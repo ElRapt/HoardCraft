@@ -2,6 +2,7 @@ import sqlite3
 import datetime
 from sqlite3 import Error
 from typing import Optional, Tuple
+from database.shop import update_shop_inventory
 
 def check_user_dust_balance(user_id: str, server_id: str, cost: int) -> bool:
     """
@@ -49,7 +50,7 @@ def ensure_server_exists_in_db(server_id: str):
 
 def check_user_cooldown(user_id: str, server_id: str) -> Tuple[bool, Optional[datetime.datetime]]:
     """
-    Checks if a user is currently under cooldown on a specific server.
+    Checks if a user is currently under cooldown for random on a specific server.
 
     Args:
         user_id (str): The user's Discord ID.
@@ -127,6 +128,23 @@ def check_card_ownership(user_id: str, card_id: int, server_id: str) -> bool:
     finally:
         conn.close()
 
+
+def get_next_reset_time(server_id: str) -> datetime.datetime:
+    conn = sqlite3.connect("database.sqlite")
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT lastUpdated FROM Shop WHERE serverID = ?", (server_id,))
+        result = cur.fetchone()
+        if result:
+            last_updated = datetime.datetime.fromisoformat(result[0])
+            return last_updated + datetime.timedelta(hours=1)
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
+    finally:
+        conn.close()
+    # Default to current time if error occurs
+    return datetime.datetime.now()
+
 ## HACK: This is a temporary function to reset the cooldown for the user on a specific server
 def reset_cooldown(user_id: str, server_id: str):
     conn = sqlite3.connect("database.sqlite")
@@ -135,6 +153,29 @@ def reset_cooldown(user_id: str, server_id: str):
     try:
         cur.execute("DELETE FROM UserRequests WHERE userID = ? AND serverID = ?", (user_id, server_id))
         conn.commit()
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
+    finally:
+        conn.close()
+
+def reset_shop(server_id: str):
+    """
+    Resets the shop for a specific server and triggers an update.
+
+    Args:
+        server_id (str): The Discord server's ID.
+    """
+    conn = sqlite3.connect("database.sqlite")
+    cur = conn.cursor()
+
+    try:
+        # Delete the current shop record for the specified server
+        cur.execute("DELETE FROM Shop WHERE serverID = ?", (server_id,))
+        conn.commit()
+
+        # Trigger shop update
+        update_shop_inventory(server_id)
+        
     except sqlite3.Error as e:
         print(f"An error occurred: {e}")
     finally:
