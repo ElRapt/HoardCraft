@@ -1,7 +1,7 @@
 import sqlite3
 import datetime
 from sqlite3 import Error
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 def get_random_card() -> Optional[Tuple[int, str, str, str, str, str, str]]:
     """
@@ -61,4 +61,40 @@ def get_user_collection(user_id: str, server_id: int) -> Optional[list]:
     
     return cards if cards else None
 
+
+def get_collections() -> List[str]:
+    """ Fetch all distinct collections from the database. """
+    conn = sqlite3.connect("database.sqlite")
+    try:
+        with conn:
+            cur = conn.cursor()
+            cur.execute("SELECT DISTINCT name from Collection")
+            rows = cur.fetchall()
+            return [row[0] for row in rows]
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
+        return []
+    finally:
+        conn.close()
+        
+def fetch_cards_by_collection(user_id: str, collection_name: str) -> List[Tuple]:
+    """ Fetch cards for a specific user filtered by collection name. """
+    conn = sqlite3.connect("database.sqlite")
+    try:
+        with conn:
+            cur = conn.cursor()
+            cur.execute("""
+            SELECT c.name, co.name, c.title, c.quote, c.imageURL, c.rarity 
+            FROM Card c
+            JOIN Collection co ON c.collectionID = co.id
+            JOIN UserCard uc ON c.id = uc.cardID
+            WHERE uc.userID = ? AND LOWER(co.name) = LOWER(?)
+            """, (user_id, collection_name))
+            cards = cur.fetchall()
+            return cards
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
+        return []
+    finally:
+        conn.close()
 

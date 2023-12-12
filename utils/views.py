@@ -2,6 +2,7 @@ import discord
 import datetime
 from database.claim import de_claim_card, claim_card
 from database.dust import get_dust_balance
+from database.cards import get_collections, fetch_cards_by_collection
 from database.utils import check_card_ownership, get_next_reset_time
 from database.shop import craft_card
 
@@ -44,24 +45,33 @@ class ConfirmView(discord.ui.View):
 class PaginatedView(discord.ui.View):
     def __init__(self, cards, user_name, user_id, initial_index=0):
         super().__init__()
+        self.original_cards = cards[:]  
         self.cards = cards
         self.user_name = user_name
         self.user_id = user_id 
         self.current_index = initial_index
         self.update_buttons()  
 
-    def update_buttons(self):
-        # Update the state of the Previous button
-        if self.current_index > 0:
-            self.children[0].disabled = False  # Enable Previous button
-        else:
-            self.children[0].disabled = True   # Disable Previous button
 
-        # Update the state of the Next button
-        if self.current_index < len(self.cards) - 1:
-            self.children[1].disabled = False  # Enable Next button
+    def update_buttons(self):
+        # Ensure that there are enough children in the list before accessing them
+        if len(self.children) >= 2:
+            # Update the state of the Previous button
+            if self.current_index > 0:
+                self.children[0].disabled = False  # Enable Previous button
+            else:
+                self.children[0].disabled = True   # Disable Previous button
+
+            # Update the state of the Next button
+            if self.current_index < len(self.cards) - 1:
+                self.children[1].disabled = False  # Enable Next button
+            else:
+                self.children[1].disabled = True   # Disable Next button
         else:
-            self.children[1].disabled = True   # Disable Next button
+            # Log a warning or handle the case where buttons are not added
+            print("Warning: The children list does not contain enough elements.")
+
+            
 
     @discord.ui.button(label="Previous", style=discord.ButtonStyle.grey)
     async def show_previous(self, button: discord.ui.Button, interaction: discord.Interaction):
@@ -107,7 +117,44 @@ class PaginatedView(discord.ui.View):
         else:
             await interaction.response.send_message("You do not have permission to do this.", ephemeral=True)
 
+    @discord.ui.button(label="Filter", style=discord.ButtonStyle.blurple)
+    async def filter_collection(self, button: discord.ui.Button, interaction: discord.Interaction):
+        if interaction.user.id == self.user_id:
+            collections = get_collections()  # Assuming this fetches a list of collection names
+            select_menu = discord.ui.Select(
+                placeholder="Choose a collection",
+                options=[discord.SelectOption(label=collection) for collection in collections]
+            )
+            select_menu.callback = self.on_collection_select
+            self.add_item(select_menu)
+            self.update_buttons()
+            await interaction.response.edit_message(embed=self.create_embed(), view=self)
+        else:
+            await interaction.response.send_message("You do not have permission to do this.", ephemeral=True)
 
+
+    def filter_cards_by_collection(self, collection_name, interaction):
+        self.cards = fetch_cards_by_collection(self.user_id, collection_name)
+        if not self.cards:
+            # No cards found in the selected collection
+            return False
+        self.current_index = 0
+        return True
+
+    async def on_collection_select(self, interaction: discord.Interaction):
+        select = interaction.data['values'][0]
+        if not self.filter_cards_by_collection(select, interaction):
+            # Handle the case where no cards are found
+            await interaction.response.send_message(f"No cards found in the collection '{select}'.", ephemeral=True)
+            return
+        self.remove_select_menu()
+        self.update_buttons()
+        await interaction.response.edit_message(embed=self.create_embed(), view=self)
+        
+    def remove_select_menu(self):
+        self.children = [child for child in self.children if not isinstance(child, discord.ui.Select)]
+        
+        
     def create_embed(self):
         card = self.cards[self.current_index]
         name, collection_name, title, quote, image_url, rarity = card
