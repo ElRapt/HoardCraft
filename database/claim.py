@@ -9,14 +9,14 @@ def claim_card(user_id: str, card_id: int, server_id: str) -> bool:
         cur = conn.cursor()
 
         try:
-            # Check if the card is already claimed
+            
             cur.execute("""
             SELECT 1 FROM UserCard WHERE userID = ? AND serverID = ? AND cardID = ?;
             """, (user_id, server_id, card_id))
             if cur.fetchone() is not None:
-                return False  # Card already claimed
+                return False  
 
-            # Claim the card
+            
             cur.execute("""
             INSERT INTO UserCard (userID, serverID, cardID) VALUES (?, ?, ?);
             """, (user_id, server_id, card_id))

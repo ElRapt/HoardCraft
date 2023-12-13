@@ -6,7 +6,7 @@ def add_card_to_db(name, collection_id, rarity, title, quote, image_url):
     conn = sqlite3.connect("database.sqlite")
     cur = conn.cursor()
     try:
-        # Check if a card with the same name already exists
+        
         cur.execute("SELECT * FROM Card WHERE name = ?", (name,))
         if cur.fetchone():
             print(f"Updating card with name '{name}'.")
@@ -24,29 +24,29 @@ def add_card_to_db(name, collection_id, rarity, title, quote, image_url):
 import csv
 
 def adjusted_custom_parser(line):
-    # Use csv.reader for lines with double-quoted fields
+    
     reader = csv.reader([line], skipinitialspace=True)
     for row in reader:
-        # If parsed into 6 fields, return these fields
+        
         if len(row) == 6:
             return [field.strip() for field in row]
 
-    # Manual parsing for lines without double-quoted fields
-    # Split the line by comma and manually extract fields
+    
+    
     parts = line.split(',')
     if len(parts) < 6:
         return None
 
-    # Extracting the first four fields which are less likely to contain commas
+    
     name = parts[0].strip()
     collection_id = parts[1].strip()
     rarity = parts[2].strip()
     title = parts[3].strip()
 
-    # Assuming the image URL is the last field and does not contain commas
+    
     image_url = parts[-1].strip()
 
-    # The quote is the remaining part of the line
+    
     quote = ','.join(parts[4:-1]).strip()
 
     return name, collection_id, rarity, title, quote, image_url
@@ -58,7 +58,7 @@ def delete_encoding_errors():
     conn = sqlite3.connect("database.sqlite")
     cur = conn.cursor()
     try:
-        # Delete entries where 'lâ€™' appears in name, title, or quote
+        
         cur.execute("DELETE FROM Card WHERE name LIKE '%lâ€™%' OR title LIKE '%lâ€™%' OR quote LIKE '%lâ€™%'")
         conn.commit()
         print(f"Deleted entries with encoding errors.")
@@ -79,6 +79,6 @@ def process_file(file_path):
                 print(f"Skipping invalid line: {line.strip()}")
 
 if __name__ == "__main__":
-    file_path = 'cards.csv'  # Replace with your file path
+    file_path = 'cards.csv'  
     delete_encoding_errors()
     process_file(file_path)

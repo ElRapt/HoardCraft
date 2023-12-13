@@ -44,7 +44,7 @@ def calculate_dust_earned(rarity: str) -> int:
         'uncommon': 50,   
         'common': 10,     
     }
-    return dust_values.get(rarity.lower(), 0)  # Default to 0 if rarity not found
+    return dust_values.get(rarity.lower(), 0)  
 
 def update_dust_balance(user_id: str, server_id: str, dust_earned: int):
     """
@@ -59,15 +59,15 @@ def update_dust_balance(user_id: str, server_id: str, dust_earned: int):
     cur = conn.cursor()
 
     try:
-        # Check if the user has a dust balance entry
+        
         cur.execute("SELECT balance FROM DustBalance WHERE userID = ? AND serverID = ?", (user_id, server_id))
         result = cur.fetchone()
         if result:
-            # Update existing balance
+            
             new_balance = result[0] + dust_earned
             cur.execute("UPDATE DustBalance SET balance = ? WHERE userID = ? AND serverID = ?", (new_balance, user_id, server_id))
         else:
-            # Create new balance entry
+            
             cur.execute("INSERT INTO DustBalance (userID, serverID, balance) VALUES (?, ?, ?)", (user_id, server_id, dust_earned))
 
         conn.commit()

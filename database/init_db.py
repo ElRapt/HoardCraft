@@ -56,7 +56,7 @@ def init_db():
                                     FOREIGN KEY (collectionID) REFERENCES Collection(id)
                                 );"""
 
-    # Updated UserRequests table with serverID
+    
     sql_create_user_requests_table = """CREATE TABLE IF NOT EXISTS UserRequests (
                                             userID TEXT,
                                             serverID TEXT,
@@ -66,7 +66,7 @@ def init_db():
                                             FOREIGN KEY (userID, serverID) REFERENCES User(userID, serverID)
                                         );"""
 
-    # Updated UserCard table with the composite primary key (userID, serverID, cardID)
+    
     sql_create_user_card_table = """CREATE TABLE IF NOT EXISTS UserCard (
                                             userID TEXT NOT NULL,
                                             serverID INTEGER NOT NULL,
@@ -97,18 +97,18 @@ def init_db():
                                         FOREIGN KEY(item3) REFERENCES Card(id)
                                     );"""
 
-    # create a database connection
+    
     conn = create_connection(database)
 
-    # create tables
+    
     if conn is not None:
         create_table(conn, sql_create_server_table)
         create_table(conn, sql_create_user_table)
         create_table(conn, sql_create_collection_table)
         create_table(conn, sql_create_card_table)
-        create_table(conn, sql_create_user_requests_table)  # Updated table for user requests
-        create_table(conn, sql_create_user_card_table)  # Updated table for user cards
-        create_table(conn, sql_create_dust_balance_table)  # Table for dust balance
+        create_table(conn, sql_create_user_requests_table)  
+        create_table(conn, sql_create_user_card_table)  
+        create_table(conn, sql_create_dust_balance_table)  
         create_table(conn, sql_create_shop_table)  
         conn.commit()
         conn.close()

@@ -21,7 +21,7 @@ class Utils(commands.Cog):
         embed = discord.Embed(
             title="Dust Balance",
             description=f"{ctx.author.display_name}, here's your dust balance:",
-            color=discord.Color.blue()  # You can change the color
+            color=discord.Color.blue()  
         )
         embed.set_thumbnail(url=thumbnail_url)
         embed.add_field(name="Balance", value=f"{dust_balance} dust", inline=False)

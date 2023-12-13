@@ -54,21 +54,21 @@ class PaginatedView(discord.ui.View):
 
 
     def update_buttons(self):
-        # Ensure that there are enough children in the list before accessing them
+        
         if len(self.children) >= 2:
-            # Update the state of the Previous button
+            
             if self.current_index > 0:
-                self.children[0].disabled = False  # Enable Previous button
+                self.children[0].disabled = False  
             else:
-                self.children[0].disabled = True   # Disable Previous button
+                self.children[0].disabled = True   
 
-            # Update the state of the Next button
+            
             if self.current_index < len(self.cards) - 1:
-                self.children[1].disabled = False  # Enable Next button
+                self.children[1].disabled = False  
             else:
-                self.children[1].disabled = True   # Disable Next button
+                self.children[1].disabled = True   
         else:
-            # Log a warning or handle the case where buttons are not added
+            
             print("Warning: The children list does not contain enough elements.")
 
             
@@ -95,24 +95,24 @@ class PaginatedView(discord.ui.View):
     async def remove_card(self, button: discord.ui.Button, interaction: discord.Interaction):
         if interaction.user.id == self.user_id:
             card = self.cards[self.current_index]
-            card_name = card[0]  # Get the card's name
+            card_name = card[0]  
 
-            # Ask for confirmation before removing
+            
             confirm_view = ConfirmView()
             await interaction.response.send_message(f"Are you sure you want to un-claim {card_name}?", view=confirm_view, ephemeral=True)
             await confirm_view.wait()
 
             if confirm_view.value:
-                # If confirmed, un-claim the card
+                
                 if de_claim_card(interaction.user.id, card_name, interaction.guild.id):
                     await interaction.followup.send(f"{card_name} has been un-claimed successfully.", ephemeral=True)
                 else:
                     await interaction.followup.send(f"Failed to un-claim {card_name}.", ephemeral=True)
             else:
-                # If cancelled, let the user know
+                
                 await interaction.followup.send(f"un-claiming of {card_name} cancelled.", ephemeral=True)
 
-            # Update the original message to remove the buttons
+            
             await interaction.edit_original_response(view=None)
         else:
             await interaction.response.send_message("You do not have permission to do this.", ephemeral=True)
@@ -120,7 +120,7 @@ class PaginatedView(discord.ui.View):
     @discord.ui.button(label="Filter", style=discord.ButtonStyle.blurple)
     async def filter_collection(self, button: discord.ui.Button, interaction: discord.Interaction):
         if interaction.user.id == self.user_id:
-            collections = get_collections()  # Assuming this fetches a list of collection names
+            collections = get_collections()  
             select_menu = discord.ui.Select(
                 placeholder="Choose a collection",
                 options=[discord.SelectOption(label=collection) for collection in collections]
@@ -136,7 +136,7 @@ class PaginatedView(discord.ui.View):
     def filter_cards_by_collection(self, collection_name, interaction):
         self.cards = fetch_cards_by_collection(self.user_id, collection_name)
         if not self.cards:
-            # No cards found in the selected collection
+            
             return False
         self.current_index = 0
         return True
@@ -144,7 +144,7 @@ class PaginatedView(discord.ui.View):
     async def on_collection_select(self, interaction: discord.Interaction):
         select = interaction.data['values'][0]
         if not self.filter_cards_by_collection(select, interaction):
-            # Handle the case where no cards are found
+            
             await interaction.response.send_message(f"No cards found in the collection '{select}'.", ephemeral=True)
             return
         self.remove_select_menu()
@@ -158,20 +158,20 @@ class PaginatedView(discord.ui.View):
     def create_embed(self):
         card = self.cards[self.current_index]
         name, collection_name, title, quote, image_url, rarity = card
-        color = rarity_colors.get(rarity.lower(), discord.Colour.default())  # Get color based on rarity
-        icon_url = collection_icons.get(collection_name.lower(), "")  # Get icon URL based on collection
+        color = rarity_colors.get(rarity.lower(), discord.Colour.default())  
+        icon_url = collection_icons.get(collection_name.lower(), "")  
 
         embed = discord.Embed(
-            title=name,  # Card's name
-            description=title,  # Card's title
-            color=color  # Set color based on rarity
+            title=name,  
+            description=title,  
+            color=color  
         )
-        embed.set_thumbnail(url=icon_url)  # Set thumbnail based on collection
-        embed.set_author(name=collection_name)  # Set author to collection name
-        embed.set_image(url=image_url)  # Image URL
-        embed.set_footer(text=quote)  # Set footer to card's quote
+        embed.set_thumbnail(url=icon_url)  
+        embed.set_author(name=collection_name)  
+        embed.set_image(url=image_url)  
+        embed.set_footer(text=quote)  
 
-        # Additional text for pagination
+        
         embed.set_footer(text=f"{embed.footer.text} | Card {self.current_index + 1} of {len(self.cards)} | {self.user_name}'s collection")
         return embed
 
@@ -179,7 +179,7 @@ class ClaimView(discord.ui.View):
     def __init__(self, card_id, user_id):
         super().__init__()
         self.card_id = card_id
-        self.user_id = user_id  # Store the user's ID who requested the card
+        self.user_id = user_id  
 
     @discord.ui.button(label="Claim", style=discord.ButtonStyle.success, emoji="🏆")
     async def claim_callback(self, button, interaction):
@@ -202,10 +202,10 @@ class ShopView(discord.ui.View):
         self.update_buttons()
 
     def update_buttons(self):
-        # Enable/Disable Previous button
+        
         self.children[0].disabled = self.current_index <= 0
 
-        # Enable/Disable Next button
+        
         self.children[1].disabled = self.current_index >= len(self.shop_inventory) - 1
 
         card_id, cost = self.shop_inventory[self.current_index][0], self.shop_inventory[self.current_index][-1]
@@ -235,7 +235,7 @@ class ShopView(discord.ui.View):
     @discord.ui.button(label="Craft", style=discord.ButtonStyle.green)
     async def craft_card(self, button, interaction):
         card = self.shop_inventory[self.current_index]
-        card_id, card_cost = card[0], card[-1]  # Assuming the cost is the last element
+        card_id, card_cost = card[0], card[-1]  
         if craft_card(interaction.user.id, card_id, interaction.guild.id, card_cost):
             await interaction.response.send_message(f"You have crafted {card[1]}!", ephemeral=True)
         else:
@@ -256,7 +256,7 @@ class ShopView(discord.ui.View):
             embed.set_thumbnail(url=image_url)
             embed.set_author(name=collection_name)
 
-            # Calculate time remaining until shop reset
+            
             reset_time = get_next_reset_time(self.server_id)
             time_remaining = reset_time - datetime.datetime.now()
             hours, remainder = divmod(int(time_remaining.total_seconds()), 3600)

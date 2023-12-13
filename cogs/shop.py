@@ -14,13 +14,13 @@ class Shop(commands.Cog):
         user_id = ctx.author.id
         server_id = ctx.guild.id
 
-        # Pass the server_id to get the shop inventory for the specific server
+        
         shop_inventory = get_shop_inventory(server_id) 
 
-        # Create a ShopView instance with the retrieved shop inventory
+        
         view = ShopView(shop_inventory, user_id, server_id)
 
-        # Respond with the shop inventory embedded in a message
+        
         await ctx.respond(embed=view.create_embed(), view=view)
 
 

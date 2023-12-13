@@ -21,21 +21,21 @@ def craft_card(user_id: str, card_id: int, server_id: int, cost: int) -> bool:
     cur = conn.cursor()
 
     try:
-        # Check and update the user's dust balance
+        
         cur.execute("SELECT balance FROM DustBalance WHERE userID = ? AND serverID = ?", (user_id, server_id))
         result = cur.fetchone()
         if result and result[0] >= cost:
             new_balance = result[0] - cost
             cur.execute("UPDATE DustBalance SET balance = ? WHERE userID = ? AND serverID = ?", (new_balance, user_id, server_id))
         else:
-            return False  # Not enough dust
+            return False  
 
-        # Check if the user already owns the card
+        
         cur.execute("SELECT 1 FROM UserCard WHERE userID = ? AND serverID = ? AND cardID = ?", (user_id, server_id, card_id))
         if cur.fetchone() is not None:
-            return False  # User already owns the card
+            return False  
 
-        # Add the card to the user's collection
+        
         cur.execute("INSERT INTO UserCard (userID, serverID, cardID) VALUES (?, ?, ?)", (user_id, server_id, card_id))
         conn.commit()
         return True
@@ -48,7 +48,7 @@ def craft_card(user_id: str, card_id: int, server_id: int, cost: int) -> bool:
 
 import datetime
 
-last_updated_cache = {}  # Global cache for last updated times
+last_updated_cache = {}  
 
 def get_shop_inventory(server_id: str) -> list:
     conn = sqlite3.connect("database.sqlite")
@@ -56,14 +56,14 @@ def get_shop_inventory(server_id: str) -> list:
     current_time = datetime.datetime.now()
 
     try:
-        # Check if shop needs updating from cache
+        
         last_updated = last_updated_cache.get(server_id)
         if last_updated is None or current_time - last_updated >= datetime.timedelta(hours=1):
             update_shop_inventory(server_id)
             last_updated = datetime.datetime.now()
             last_updated_cache[server_id] = last_updated
 
-        # Fetch the inventory
+        
         cur.execute("""
         SELECT c.id, c.name, co.name, c.title, c.quote, c.imageURL, c.rarity,
                (CASE c.rarity WHEN 'legendary' THEN 1000 WHEN 'epic' THEN 400 WHEN 'rare' THEN 200 WHEN 'uncommon' THEN 100 ELSE 50 END) as cost
@@ -94,7 +94,7 @@ def update_shop_inventory(server_id: int):
     cur = conn.cursor()
 
     try:
-        # Select 3 new random items for the shop
+        
         cur.execute("""
         SELECT id FROM Card
         ORDER BY RANDOM()
@@ -102,7 +102,7 @@ def update_shop_inventory(server_id: int):
         """)
         items = [item[0] for item in cur.fetchall()]
 
-        # Update the Shop table with new items and timestamp
+        
         cur.execute("""
         INSERT INTO Shop (serverID, lastUpdated, item1, item2, item3)
         VALUES (?, ?, ?, ?, ?)

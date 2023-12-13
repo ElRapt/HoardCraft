@@ -37,10 +37,10 @@ def ensure_server_exists_in_db(server_id: str):
     cur = conn.cursor()
 
     try:
-        # Check if the server exists in the database
+        
         cur.execute("SELECT id FROM Server WHERE serverID = ?", (server_id,))
         if cur.fetchone() is None:
-            # If not, add it
+            
             cur.execute("INSERT INTO Server (serverID) VALUES (?)", (server_id,))
             conn.commit()
     except sqlite3.Error as e:
@@ -76,7 +76,7 @@ def check_user_cooldown(user_id: str, server_id: str) -> Tuple[bool, Optional[da
             if current_time - first_request_time < datetime.timedelta(hours=1):
                 if request_count >= 5:
                     cooldown_end = first_request_time + datetime.timedelta(hours=1)
-                    return False, cooldown_end  # Cooldown active, return end time
+                    return False, cooldown_end  
                 else:
                     cur.execute("""
                     UPDATE UserRequests SET requestCount = requestCount + 1 WHERE userID = ? AND serverID = ?
@@ -86,16 +86,16 @@ def check_user_cooldown(user_id: str, server_id: str) -> Tuple[bool, Optional[da
                 UPDATE UserRequests SET firstRequestTime = ?, requestCount = 1 WHERE userID = ? AND serverID = ?
                 """, (current_time.isoformat(), user_id, server_id))
             conn.commit()
-            return True, None  # No cooldown
+            return True, None  
         else:
             cur.execute("""
             INSERT INTO UserRequests (userID, serverID, firstRequestTime, requestCount) VALUES (?, ?, ?, ?)
             """, (user_id, server_id, current_time.isoformat(), 1))
             conn.commit()
-            return True, None  # No cooldown
+            return True, None  
     except sqlite3.Error as e:
         print(f"An error occurred: {e}")
-        return False, None  # Default to cooldown in case of error
+        return False, None  
     finally:
         conn.close()
 
@@ -142,10 +142,10 @@ def get_next_reset_time(server_id: str) -> datetime.datetime:
         print(f"An error occurred: {e}")
     finally:
         conn.close()
-    # Default to current time if error occurs
+    
     return datetime.datetime.now()
 
-## HACK: This is a temporary function to reset the cooldown for the user on a specific server
+
 def reset_cooldown(user_id: str, server_id: str):
     conn = sqlite3.connect("database.sqlite")
     cur = conn.cursor()
@@ -169,11 +169,11 @@ def reset_shop(server_id: str):
     cur = conn.cursor()
 
     try:
-        # Delete the current shop record for the specified server
+        
         cur.execute("DELETE FROM Shop WHERE serverID = ?", (server_id,))
         conn.commit()
 
-        # Trigger shop update
+        
         update_shop_inventory(server_id)
         
     except sqlite3.Error as e:
