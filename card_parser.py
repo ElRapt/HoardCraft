@@ -20,9 +20,6 @@ def add_card_to_db(name, collection_id, rarity, title, quote, image_url):
         conn.close()
 
 
-
-import csv
-
 def adjusted_custom_parser(line):
     
     reader = csv.reader([line], skipinitialspace=True)
