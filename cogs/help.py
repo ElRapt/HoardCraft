@@ -10,7 +10,7 @@ class Help(commands.Cog):
         embed = discord.Embed(title="HoardCraft commands", color=discord.Color.blue())
         embed.add_field(name="`/help`", value="Shows this message.", inline=False)
         embed.add_field(name="`/random`", value="Randomly drops a card amongst all cards.", inline=False)
-        embed.add_field(name="`/shop`", value="Display the shop : 3 random cards you can buy with dust.", inline=False)
+        embed.add_field(name="`/shop`", value="Displays the shop : 3 random cards you can buy with dust.", inline=False)
         embed.add_field(name="`/list`", value="Displays your card collection.", inline=False)
         embed.add_field(name="`/checkdust`", value="Check your dust balance.", inline=False)
 
