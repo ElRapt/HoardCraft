@@ -13,6 +13,7 @@ class Help(commands.Cog):
         embed.add_field(name="`/shop`", value="Displays the shop : 3 random cards you can buy with dust.", inline=False)
         embed.add_field(name="`/list`", value="Displays your card collection.", inline=False)
         embed.add_field(name="`/checkdust`", value="Check your dust balance.", inline=False)
+        embed.set_footer(text="Like the bot ? Consider supporting its creator at ko-fi.com/elraptou !")
 
         await ctx.respond(embed=embed, ephemeral=True)
 
