@@ -2,26 +2,14 @@ import sqlite3
 import datetime
 from sqlite3 import Error
 from typing import Optional, Tuple
+from utils.connection import DatabaseConnection
 
-def create_connection(db_file):
-    """ create a database connection to the SQLite database
-        specified by the db_file
-    """
-    conn = None
-    try:
-        conn = sqlite3.connect(db_file)
-        return conn
-    except Error as e:
-        print("Except :", e)
-
-    return conn
-
-def create_table(conn, create_table_sql):
-    """ create a table from the create_table_sql statement
+def execute_query(conn, execute_query_sql):
+    """ create a table from the execute_query_sql statement
     """
     try:
-        c = conn.cursor()
-        c.execute(create_table_sql)
+        c = conn.get_cursor()
+        c.execute(execute_query_sql)
     except Error as e:
         print(e)
 
@@ -98,18 +86,31 @@ def init_db():
                                     );"""
 
     
-    conn = create_connection(database)
+    sql_index_user_on_user_card = "CREATE INDEX IF NOT EXISTS idx_user_on_user_card ON UserCard (userID);"
+    sql_index_server_on_user_card = "CREATE INDEX IF NOT EXISTS idx_server_on_user_card ON UserCard (serverID);"
+    sql_index_card_on_user_card = "CREATE INDEX IF NOT EXISTS idx_card_on_user_card ON UserCard (cardID);"
+    sql_index_user_server_on_user_requests = "CREATE INDEX IF NOT EXISTS idx_user_server_on_user_requests ON UserRequests (userID, serverID);"
+    sql_index_user_server_on_dust_balance = "CREATE INDEX IF NOT EXISTS idx_user_server_on_dust_balance ON DustBalance (userID, serverID);"
+    
+    conn = DatabaseConnection.get_instance()
 
     
     if conn is not None:
-        create_table(conn, sql_create_server_table)
-        create_table(conn, sql_create_user_table)
-        create_table(conn, sql_create_collection_table)
-        create_table(conn, sql_create_card_table)
-        create_table(conn, sql_create_user_requests_table)  
-        create_table(conn, sql_create_user_card_table)  
-        create_table(conn, sql_create_dust_balance_table)  
-        create_table(conn, sql_create_shop_table)  
+        execute_query(conn, sql_create_server_table)
+        execute_query(conn, sql_create_user_table)
+        execute_query(conn, sql_create_collection_table)
+        execute_query(conn, sql_create_card_table)
+        execute_query(conn, sql_create_user_requests_table)  
+        execute_query(conn, sql_create_user_card_table)  
+        execute_query(conn, sql_create_dust_balance_table)  
+        execute_query(conn, sql_create_shop_table)  
+        
+        execute_query(conn, sql_index_user_on_user_card)
+        execute_query(conn, sql_index_server_on_user_card)
+        execute_query(conn, sql_index_card_on_user_card)
+        execute_query(conn, sql_index_user_server_on_user_requests)
+        execute_query(conn, sql_index_user_server_on_dust_balance)
+        
         conn.commit()
         conn.close()
     else:

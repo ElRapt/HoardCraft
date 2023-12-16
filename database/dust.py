@@ -2,6 +2,7 @@ import sqlite3
 import datetime
 from sqlite3 import Error
 from typing import Optional, Tuple
+from utils.connection import DatabaseConnection
 
 def get_dust_balance(user_id: str, server_id: str) -> int:
     """
@@ -14,18 +15,16 @@ def get_dust_balance(user_id: str, server_id: str) -> int:
     Returns:
         int: The user's dust balance.
     """
-    conn = sqlite3.connect("database.sqlite")
-    cur = conn.cursor()
+    db_connection = DatabaseConnection.get_instance()
+    cursor = db_connection.get_cursor()
 
     try:
-        cur.execute("SELECT balance FROM DustBalance WHERE userID = ? AND serverID = ?", (user_id, server_id))
-        result = cur.fetchone()
+        cursor.execute("SELECT balance FROM DustBalance WHERE userID = ? AND serverID = ?", (user_id, server_id))
+        result = cursor.fetchone()
         return result[0] if result else 0
     except sqlite3.Error as e:
         print(f"An error occurred: {e}")
         return 0
-    finally:
-        conn.close()
 
 def calculate_dust_earned(rarity: str) -> int:
     """
@@ -55,23 +54,21 @@ def update_dust_balance(user_id: str, server_id: str, dust_earned: int):
         server_id (str): The server's ID.
         dust_earned (int): The amount of dust to add to the balance.
     """
-    conn = sqlite3.connect("database.sqlite")
-    cur = conn.cursor()
+    db_connection = DatabaseConnection.get_instance()
+    cursor = db_connection.get_cursor()
 
     try:
         
-        cur.execute("SELECT balance FROM DustBalance WHERE userID = ? AND serverID = ?", (user_id, server_id))
-        result = cur.fetchone()
+        cursor.execute("SELECT balance FROM DustBalance WHERE userID = ? AND serverID = ?", (user_id, server_id))
+        result = cursor.fetchone()
         if result:
             
             new_balance = result[0] + dust_earned
-            cur.execute("UPDATE DustBalance SET balance = ? WHERE userID = ? AND serverID = ?", (new_balance, user_id, server_id))
+            cursor.execute("UPDATE DustBalance SET balance = ? WHERE userID = ? AND serverID = ?", (new_balance, user_id, server_id))
         else:
             
-            cur.execute("INSERT INTO DustBalance (userID, serverID, balance) VALUES (?, ?, ?)", (user_id, server_id, dust_earned))
+            cursor.execute("INSERT INTO DustBalance (userID, serverID, balance) VALUES (?, ?, ?)", (user_id, server_id, dust_earned))
 
-        conn.commit()
+        db_connection.commit()
     except sqlite3.Error as e:
         print(f"An error occurred: {e}")
-    finally:
-        conn.close()

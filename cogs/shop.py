@@ -11,12 +11,17 @@ class Shop(commands.Cog):
 
     @discord.slash_command(description="View the card shop")
     async def shop(self, ctx):
-        user_id = ctx.author.id
-        server_id = ctx.guild.id
-        shop_inventory = get_shop_inventory(server_id) 
-        view = ShopView(shop_inventory, user_id, server_id)
-
-        await ctx.respond(embed=view.create_embed(), view=view)
+        try:
+            user_id = ctx.author.id
+            server_id = ctx.guild.id
+            shop_inventory = get_shop_inventory(server_id) 
+            if shop_inventory:
+                view = ShopView(shop_inventory, user_id, server_id)
+                await ctx.respond(embed=view.create_embed(), view=view)
+            else:
+                await ctx.respond("The shop is currently empty.")
+        except Exception as e:
+            await ctx.respond(f"An error occurred: {e}", ephemeral=True)
 
 
 

@@ -35,53 +35,54 @@ class Random(commands.Cog):
     
     @discord.slash_command(description="Get a random card")
     async def random(self, ctx):
-        user_id = str(ctx.author.id)
-        server_id = str(ctx.guild.id)
+        try:
+            user_id = str(ctx.author.id)
+            server_id = str(ctx.guild.id)
 
-        can_request, cooldown_end = check_user_cooldown(user_id, server_id)
-        if not can_request:
-            current_time = datetime.datetime.now()
-            if cooldown_end is not None:
-                remaining_time = cooldown_end - current_time
-                hours, remainder = divmod(int(remaining_time.total_seconds()), 3600)
-                minutes, seconds = divmod(remainder, 60)
+            can_request, cooldown_end = check_user_cooldown(user_id, server_id)
+            if not can_request:
+                current_time = datetime.datetime.now()
+                if cooldown_end is not None:
+                    remaining_time = cooldown_end - current_time
+                    hours, remainder = divmod(int(remaining_time.total_seconds()), 3600)
+                    minutes, seconds = divmod(remainder, 60)
 
-                
-                time_str = f"{hours}h {minutes}m {seconds}s"
-                await ctx.respond(f"You have reached your limit of 5 requests per hour. Please wait for {time_str} before trying again.", ephemeral=True)
+                    time_str = f"{hours}h {minutes}m {seconds}s"
+                    await ctx.respond(f"You have reached your limit of 5 requests per hour. Please wait for {time_str} before trying again.", ephemeral=True)
+                else:
+                    await ctx.respond("You are currently on cooldown, but the remaining time could not be calculated.", ephemeral=True)
+                return
+
+            card = get_random_card()
+            if card:
+                card_id, name, collection_name, title, quote, image_url, rarity = card
+
+                if check_card_ownership(user_id, card_id, server_id):
+                    dust_earned = calculate_dust_earned(rarity)
+                    update_dust_balance(user_id, server_id, dust_earned)
+                    await ctx.respond(f"You already own {name}. You earned {dust_earned} dust!", ephemeral=True)
+                else:
+                    rarity = rarity.lstrip()
+                    color = rarity_colors.get(rarity, discord.Colour.default())  
+                    icon_url = collection_icons.get(collection_name.lower(), "")  
+
+                    embed = discord.Embed(
+                        title=name,
+                        description=title,
+                        color=color
+                    )
+                    embed.set_thumbnail(url=icon_url)
+                    embed.set_author(name=collection_name)
+                    embed.set_image(url=image_url)
+                    embed.set_footer(text=quote)
+
+                    await ctx.respond(embed=embed, view=ClaimView(card_id, user_id))  
             else:
-                
-                await ctx.respond("You are currently on cooldown, but the remaining time could not be calculated.", ephemeral=True)
-            return
-        card = get_random_card()
-    
-        if card:
-            card_id, name, collection_name, title, quote, image_url, rarity = card
+                await ctx.respond("No cards available.")
 
-            if check_card_ownership(user_id, card_id, server_id):
-                
-                dust_earned = calculate_dust_earned(rarity)
-                update_dust_balance(user_id, server_id, dust_earned)
-                await ctx.respond(f"You already own {name}. You earned {dust_earned} dust!", ephemeral=True)
-            else:
-                
-                rarity = rarity.lstrip()
-                color = rarity_colors.get(rarity, discord.Colour.default())  
-                icon_url = collection_icons.get(collection_name.lower(), "")  
+        except Exception as e:
+            await ctx.respond(f"An error occurred: {e}", ephemeral=True)
 
-                embed = discord.Embed(
-                    title=name,
-                    description=title,
-                    color=color
-                )
-                embed.set_thumbnail(url=icon_url)
-                embed.set_author(name=collection_name)
-                embed.set_image(url=image_url)
-                embed.set_footer(text=quote)
-
-                await ctx.respond(embed=embed, view=ClaimView(card_id, user_id))  
-        else:
-            await ctx.respond("No cards available.")
 
 def setup(bot):
     bot.add_cog(Random(bot))

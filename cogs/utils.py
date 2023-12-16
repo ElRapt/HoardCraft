@@ -11,23 +11,29 @@ class Utils(commands.Cog):
     
     @discord.slash_command(description="Check your dust balance")
     async def checkdust(self, ctx):
-        user_id = str(ctx.author.id)
-        server_id = str(ctx.guild.id)
+        try:
+            user_id = str(ctx.author.id)
+            server_id = str(ctx.guild.id)
 
-        dust_balance = get_dust_balance(user_id, server_id)
+            dust_balance = get_dust_balance(user_id, server_id)
+            if dust_balance is not None:
+                thumbnail_url = "https://static.wikia.nocookie.net/hearthstone/images/6/6f/ArcaneDustIcon-62x90.png/revision/latest?cb=20160124205848"
 
-        thumbnail_url = "https://static.wikia.nocookie.net/hearthstone/images/6/6f/ArcaneDustIcon-62x90.png/revision/latest?cb=20160124205848"  
+                embed = discord.Embed(
+                    title="Dust Balance",
+                    description=f"{ctx.author.display_name}, here's your dust balance:",
+                    color=discord.Color.blue()
+                )
+                embed.set_thumbnail(url=thumbnail_url)
+                embed.add_field(name="Balance", value=f"{dust_balance} dust", inline=False)
+                embed.set_footer(text="HoardCraft Dust System")
 
-        embed = discord.Embed(
-            title="Dust Balance",
-            description=f"{ctx.author.display_name}, here's your dust balance:",
-            color=discord.Color.blue()  
-        )
-        embed.set_thumbnail(url=thumbnail_url)
-        embed.add_field(name="Balance", value=f"{dust_balance} dust", inline=False)
-        embed.set_footer(text="HoardCraft Dust System")
+                await ctx.respond(embed=embed)
+            else:
+                await ctx.respond("Unable to retrieve your dust balance at this time.", ephemeral=True)
 
-        await ctx.respond(embed=embed)
+        except Exception as e:
+            await ctx.respond(f"An error occurred: {e}", ephemeral=True)
 
 
     # @commands.has_permissions(administrator=True)

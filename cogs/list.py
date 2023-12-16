@@ -8,16 +8,19 @@ from utils.views import PaginatedView, ConfirmView
 class List(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
+        
     @discord.slash_command(description="List the user's cards")
     async def list(self, ctx):
-        cards = get_user_collection(ctx.author.id, ctx.guild.id)
-        if cards:
-            view = PaginatedView(cards, ctx.author.name, ctx.author.id)
-            await ctx.respond("Displaying your collection.", ephemeral=True)
-            await ctx.respond(embed=view.create_embed(), view=view)
-        else:
-            await ctx.respond("No cards available.")
+        try:
+            cards = get_user_collection(ctx.author.id, ctx.guild.id)
+            if cards:
+                view = PaginatedView(cards, ctx.author.name, ctx.author.id)
+                await ctx.respond("Displaying your collection.", ephemeral=True)
+                await ctx.respond(embed=view.create_embed(), view=view)
+            else:
+                await ctx.respond("No cards available.")
+        except Exception as e:
+            await ctx.respond(f"An error occurred: {e}", ephemeral=True)
 
 def setup(bot):
     bot.add_cog(List(bot))

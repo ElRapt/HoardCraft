@@ -4,6 +4,7 @@ from sqlite3 import Error
 from typing import Optional, Tuple
 from database.shop import update_shop_inventory
 from utils.cache import CooldownCache
+from utils.connection import DatabaseConnection
 
 
 cache = CooldownCache.get_instance()
@@ -20,37 +21,35 @@ def check_user_dust_balance(user_id: str, server_id: str, cost: int) -> bool:
     Returns:
         bool: True if the user has enough dust, False otherwise.
     """
-    conn = sqlite3.connect("database.sqlite")
-    cur = conn.cursor()
+    db_connection = DatabaseConnection.get_instance()
+    cursor = db_connection.get_cursor()
 
     try:
-        cur.execute("SELECT balance FROM DustBalance WHERE userID = ? AND serverID = ?", (user_id, server_id))
-        result = cur.fetchone()
+        cursor.execute("SELECT balance FROM DustBalance WHERE userID = ? AND serverID = ?", (user_id, server_id))
+        result = cursor.fetchone()
         if result:
             return result[0] >= cost
         return False
     except sqlite3.Error as e:
         print(f"An error occurred: {e}")
         return False
-    finally:
-        conn.close()
+
 
 
 def ensure_server_exists_in_db(server_id: str):
-    conn = sqlite3.connect("database.sqlite")
-    cur = conn.cursor()
+    db_connection = DatabaseConnection.get_instance()
+    cursor = db_connection.get_cursor()
 
     try:
         
-        cur.execute("SELECT id FROM Server WHERE serverID = ?", (server_id,))
-        if cur.fetchone() is None:
+        cursor.execute("SELECT id FROM Server WHERE serverID = ?", (server_id,))
+        if cursor.fetchone() is None:
             
-            cur.execute("INSERT INTO Server (serverID) VALUES (?)", (server_id,))
-            conn.commit()
+            cursor.execute("INSERT INTO Server (serverID) VALUES (?)", (server_id,))
+            db_connection.commit()
     except sqlite3.Error as e:
         print(f"An error occurred: {e}")
-    finally:
-        conn.close()
+
 
 def check_user_cooldown(user_id: str, server_id: str) -> Tuple[bool, Optional[datetime.datetime]]:
     """
@@ -69,15 +68,15 @@ def check_user_cooldown(user_id: str, server_id: str) -> Tuple[bool, Optional[da
     if is_on_cooldown:
         return False, cooldown_end
 
-    conn = sqlite3.connect("database.sqlite")
-    cur = conn.cursor()
+    db_connection = DatabaseConnection.get_instance()
+    cursor = db_connection.get_cursor()
     current_time = datetime.datetime.now()
 
     try:
-        cur.execute("""
+        cursor.execute("""
         SELECT firstRequestTime, requestCount FROM UserRequests WHERE userID = ? AND serverID = ?
         """, (user_id, server_id))
-        row = cur.fetchone()
+        row = cursor.fetchone()
 
         if row:
             first_request_time, request_count = row
@@ -89,26 +88,25 @@ def check_user_cooldown(user_id: str, server_id: str) -> Tuple[bool, Optional[da
                     cache.set_cooldown(user_id, server_id, cooldown_end)  # Update cache
                     return False, cooldown_end  
                 else:
-                    cur.execute("""
+                    cursor.execute("""
                     UPDATE UserRequests SET requestCount = requestCount + 1 WHERE userID = ? AND serverID = ?
                     """, (user_id, server_id))
             else:
-                cur.execute("""
+                cursor.execute("""
                 UPDATE UserRequests SET firstRequestTime = ?, requestCount = 1 WHERE userID = ? AND serverID = ?
                 """, (current_time.isoformat(), user_id, server_id))
-            conn.commit()
+            db_connection.commit()
             return True, None  
         else:
-            cur.execute("""
+            cursor.execute("""
             INSERT INTO UserRequests (userID, serverID, firstRequestTime, requestCount) VALUES (?, ?, ?, ?)
             """, (user_id, server_id, current_time.isoformat(), 1))
-            conn.commit()
+            db_connection.commit()
             return True, None  
     except sqlite3.Error as e:
         print(f"An error occurred: {e}")
         return False, None  
-    finally:
-        conn.close()
+
 
 
 def check_card_ownership(user_id: str, card_id: int, server_id: str) -> bool:
@@ -123,51 +121,48 @@ def check_card_ownership(user_id: str, card_id: int, server_id: str) -> bool:
     Returns:
         bool: True if the user owns the card, False otherwise.
     """
-    conn = sqlite3.connect("database.sqlite")
-    cur = conn.cursor()
+    db_connection = DatabaseConnection.get_instance()
+    cursor = db_connection.get_cursor()
 
     try:
 
-        cur.execute("""
+        cursor.execute("""
         SELECT 1 FROM UserCard 
         WHERE userID = ? AND serverID = ? AND cardID = ?;
         """, (user_id, server_id, card_id))
-        return cur.fetchone() is not None
+        return cursor.fetchone() is not None
     except sqlite3.Error as e:
         print(f"An error occurred: {e}")
         return False
-    finally:
-        conn.close()
+
 
 
 def get_next_reset_time(server_id: str) -> datetime.datetime:
-    conn = sqlite3.connect("database.sqlite")
-    cur = conn.cursor()
+    db_connection = DatabaseConnection.get_instance()
+    cursor = db_connection.get_cursor()
     try:
-        cur.execute("SELECT lastUpdated FROM Shop WHERE serverID = ?", (server_id,))
-        result = cur.fetchone()
+        cursor.execute("SELECT lastUpdated FROM Shop WHERE serverID = ?", (server_id,))
+        result = cursor.fetchone()
         if result:
             last_updated = datetime.datetime.fromisoformat(result[0])
             return last_updated + datetime.timedelta(hours=1)
     except sqlite3.Error as e:
         print(f"An error occurred: {e}")
-    finally:
-        conn.close()
+
     
     return datetime.datetime.now()
 
 
 def reset_cooldown(user_id: str, server_id: str):
-    conn = sqlite3.connect("database.sqlite")
-    cur = conn.cursor()
+    db_connection = DatabaseConnection.get_instance()
+    cursor = db_connection.get_cursor()
 
     try:
-        cur.execute("DELETE FROM UserRequests WHERE userID = ? AND serverID = ?", (user_id, server_id))
-        conn.commit()
+        cursor.execute("DELETE FROM UserRequests WHERE userID = ? AND serverID = ?", (user_id, server_id))
+        db_connection.commit()
     except sqlite3.Error as e:
         print(f"An error occurred: {e}")
-    finally:
-        conn.close()
+
 
 def reset_shop(server_id: str):
     """
@@ -176,19 +171,18 @@ def reset_shop(server_id: str):
     Args:
         server_id (str): The Discord server's ID.
     """
-    conn = sqlite3.connect("database.sqlite")
-    cur = conn.cursor()
+    db_connection = DatabaseConnection.get_instance()
+    cursor = db_connection.get_cursor()
 
     try:
         
-        cur.execute("DELETE FROM Shop WHERE serverID = ?", (server_id,))
-        conn.commit()
+        cursor.execute("DELETE FROM Shop WHERE serverID = ?", (server_id,))
+        db_connection.commit()
 
         
         update_shop_inventory(server_id)
         
     except sqlite3.Error as e:
         print(f"An error occurred: {e}")
-    finally:
-        conn.close()
+
 
