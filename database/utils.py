@@ -3,6 +3,10 @@ import datetime
 from sqlite3 import Error
 from typing import Optional, Tuple
 from database.shop import update_shop_inventory
+from utils.cache import CooldownCache
+
+
+cache = CooldownCache.get_instance()
 
 def check_user_dust_balance(user_id: str, server_id: str, cost: int) -> bool:
     """
@@ -60,6 +64,11 @@ def check_user_cooldown(user_id: str, server_id: str) -> Tuple[bool, Optional[da
         Tuple[bool, Optional[datetime.datetime]]: A tuple where the first element is a boolean indicating if the user is under cooldown,
         and the second element is the cooldown end time if they are under cooldown.
     """
+    # Check the cache first
+    is_on_cooldown, cooldown_end = cache.check_cooldown(user_id, server_id)
+    if is_on_cooldown:
+        return False, cooldown_end
+
     conn = sqlite3.connect("database.sqlite")
     cur = conn.cursor()
     current_time = datetime.datetime.now()
@@ -69,6 +78,7 @@ def check_user_cooldown(user_id: str, server_id: str) -> Tuple[bool, Optional[da
         SELECT firstRequestTime, requestCount FROM UserRequests WHERE userID = ? AND serverID = ?
         """, (user_id, server_id))
         row = cur.fetchone()
+
         if row:
             first_request_time, request_count = row
             first_request_time = datetime.datetime.fromisoformat(first_request_time)
@@ -76,6 +86,7 @@ def check_user_cooldown(user_id: str, server_id: str) -> Tuple[bool, Optional[da
             if current_time - first_request_time < datetime.timedelta(hours=1):
                 if request_count >= 5:
                     cooldown_end = first_request_time + datetime.timedelta(hours=1)
+                    cache.set_cooldown(user_id, server_id, cooldown_end)  # Update cache
                     return False, cooldown_end  
                 else:
                     cur.execute("""
