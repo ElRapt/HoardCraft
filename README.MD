@@ -29,7 +29,7 @@ HoardCraft is a Discord bot designed for World of Warcraft enthusiasts. It allow
 - **Dust System**: Earn dust from duplicates and spend it in the shop to create new characters.
 
 ## Setup
-- Click the add bot button !
+- Click the add bot button to add it to your server.
 
 ## Usage
 - **/random**: Drop a random card. 5 usages per hour.
@@ -40,6 +40,3 @@ HoardCraft is a Discord bot designed for World of Warcraft enthusiasts. It allow
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
-
-## Support
-For support, email lucasdenis03@gmail.com or join our Discord server.
