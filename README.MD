@@ -1,7 +1,7 @@
 # HoardCraft 
 
 
-![GitHub](https://img.shields.io/github/license/ElRapt/hoardcraft)
+![GitHub](https://img.shields.io/github/license/ElRapt/HoardCraft)
 ![Language](https://img.shields.io/badge/Language-Python-blue)
 ![Discord](https://img.shields.io/badge/Discord-Bot-blueviolet)
 ![Library](https://img.shields.io/badge/Library-pycord-yellow)
